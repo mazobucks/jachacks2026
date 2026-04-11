@@ -1,9 +1,12 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from Goal import Goal
 from Quests import Quest
 from mock_data import MOCK_GOALS
 
 app = Flask(__name__)
+
+# Store goals in memory for the session
+_session_goals = {}
 
 
 def convert_mock_data_to_objects(mock_goals):
@@ -30,8 +33,7 @@ def convert_mock_data_to_objects(mock_goals):
                 name=quest_dict.get("name", ""),
                 theme=quest_dict.get("theme", ""),
                 study_time=quest_dict.get("study_time", 0),
-                start=quest_dict.get("start", ""),
-                end=quest_dict.get("end", ""),
+                date=quest_dict.get("date", ""),
                 xp_reward=quest_dict.get("xp_reward", 0),
                 stat_points=quest_dict.get("stat_points", {}),
                 associated_goal=goal,
@@ -66,7 +68,9 @@ def goals():
 def quests():
     """Display quests board from mock data."""
     goals = convert_mock_data_to_objects(MOCK_GOALS)
-    return render_template('quests.html', goals=goals)
+    # Enumerate goals and pass goal_id for each quest link
+    goals_with_ids = [(i, goal) for i, goal in enumerate(goals)]
+    return render_template('quests.html', goals=goals_with_ids, goal_id=None)
 
 
 @app.route('/quests/<int:goal_id>')
@@ -83,6 +87,92 @@ def quest_detail(goal_id):
 def page_not_found(error):
     """Handle 404 errors."""
     return render_template('404.html'), 404
+
+
+@app.route('/study/<int:goal_id>/<int:quest_idx>')
+def study(goal_id, quest_idx):
+    """Study session page for a specific quest."""
+    # Reload or retrieve cached goals
+    if 'goals' not in _session_goals:
+        _session_goals['goals'] = convert_mock_data_to_objects(MOCK_GOALS)
+    
+    goals = _session_goals['goals']
+    
+    if goal_id < 0 or goal_id >= len(goals):
+        return render_template('404.html'), 404
+    
+    goal = goals[goal_id]
+    
+    if quest_idx < 0 or quest_idx >= len(goal.quests):
+        return render_template('404.html'), 404
+    
+    quest = goal.quests[quest_idx]
+    
+    # Convert study_time (hours) to seconds for the timer
+    timer_seconds = int(quest.study_time * 3600)
+    
+    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, 
+                          quest_idx=quest_idx, timer_seconds=timer_seconds)
+
+
+@app.route('/api/study/<int:goal_id>/<int:quest_idx>', methods=['POST'])
+def save_study_time(goal_id, quest_idx):
+    """Save time spent studying."""
+    if 'goals' not in _session_goals:
+        return jsonify({'success': False, 'message': 'No study session'}), 400
+    
+    goals = _session_goals['goals']
+    
+    if goal_id < 0 or goal_id >= len(goals) or quest_idx < 0 or quest_idx >= len(goals[goal_id].quests):
+        return jsonify({'success': False, 'message': 'Invalid goal or quest'}), 400
+    
+    try:
+        data = request.get_json()
+        time_spent = float(data.get('time_spent', 0))
+        
+        if time_spent < 0:
+            return jsonify({'success': False, 'message': 'Invalid time'}), 400
+        
+        quest = goals[goal_id].quests[quest_idx]
+        quest.update_time_spent(time_spent)
+        
+        # Recalc goal progress
+        goals[goal_id].recalc_progress()
+        
+        return jsonify({'success': True, 'message': f'Saved {time_spent:.2f} hours', 'progress': quest.progress})
+    except (ValueError, TypeError) as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 400
+
+
+@app.route('/api/quiz/<int:goal_id>/<int:quest_idx>/<result>', methods=['POST'])
+def quiz_result(goal_id, quest_idx, result):
+    """Handle quiz pass/fail result."""
+    if 'goals' not in _session_goals:
+        return {'success': False, 'message': 'No study session'}, 400
+    
+    goals = _session_goals['goals']
+    
+    if goal_id < 0 or goal_id >= len(goals) or quest_idx < 0 or quest_idx >= len(goals[goal_id].quests):
+        return {'success': False, 'message': 'Invalid goal or quest'}, 400
+    
+    quest = goals[goal_id].quests[quest_idx]
+    
+    if result == 'pass':
+        quest.completed = True
+        quest.failed = False
+        # Points would be awarded here
+        message = f"Quest passed! You earned {quest.xp_reward} XP"
+    elif result == 'fail':
+        quest.failed = True
+        quest.completed = False
+        message = "Quiz failed. Try again later."
+    else:
+        return {'success': False, 'message': 'Invalid result'}, 400
+    
+    # Recalc goal progress
+    goals[goal_id].recalc_progress()
+    
+    return {'success': True, 'message': message, 'quest_completed': quest.completed, 'quest_failed': quest.failed}
 
 
 if __name__ == '__main__':
