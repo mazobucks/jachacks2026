@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,21 +11,25 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
         }
+
         nav {
             background-color: #333;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         nav ul {
             list-style: none;
             display: flex;
             gap: 2rem;
             justify-content: center;
         }
+
         nav a {
             color: white;
             text-decoration: none;
@@ -32,9 +37,11 @@
             border-radius: 4px;
             transition: background-color 0.3s;
         }
+
         nav a:hover {
             background-color: #555;
         }
+
         .flash-messages {
             max-width: 1200px;
             margin: 1rem auto;
@@ -44,12 +51,15 @@
             color: #856404;
             border-radius: 6px;
         }
+
         .flash-messages ul {
             list-style: none;
         }
-        .flash-messages li + li {
+
+        .flash-messages li+li {
             margin-top: 0.5rem;
         }
+
         main {
             max-width: 1200px;
             margin: 2rem auto;
@@ -57,6 +67,7 @@
         }
     </style>
 </head>
+
 <body>
     <nav>
         <ul>
@@ -69,19 +80,20 @@
     </nav>
 
     {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flash-messages">
-          <ul>
+    {% if messages %}
+    <div class="flash-messages">
+        <ul>
             {% for message in messages %}
-              <li>{{ message }}</li>
+            <li>{{ message }}</li>
             {% endfor %}
-          </ul>
-        </div>
-      {% endif %}
+        </ul>
+    </div>
+    {% endif %}
     {% endwith %}
 
     <main>
         {% block content %}{% endblock %}
     </main>
 </body>
+
 </html>
