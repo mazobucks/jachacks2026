@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %} Quests Board {% endblock %}
+
+{% block content %}
+  {% if goals %}
+    {% for goal in goals %}
+      <section class="goal-section">
+        <div class="goal-header">
+          <div>
+            <div class="goal-title">{{ goal.exam_name }}</div>
+            <div class="goal-meta">{{ goal.exam_subject }} • Exam: {{ goal.exam_date }} • Willing hours: {{ goal.hours_willing }}</div>
+          </div>
+          <div class="goal-meta small">Progress: {{ (goal.progress|default(0)) }}% {% if goal.completed %}• Completed{% endif %}</div>
+        </div>
+
+        <div class="quest-grid">
+          {% for quest in goal.quests %}
+            <article class="quest-card">
+              <div>
+                <div class="quest-title">{{ quest.name }}</div>
+                <div class="quest-theme">{{ quest.theme }}</div>
+              </div>
+
+              <div class="quest-meta">
+                <span>{{ quest.study_time }}h</span>
+                <span class="small">XP: {{ quest.xp_reward }}</span>
+              </div>
+
+              <div class="small">{{ quest.start }} — {{ quest.end }}</div>
+
+              <div class="progress-bar" aria-hidden="true">
+                <div class="progress-inner" style="width: {{ quest.progress|default(0) }}%"></div>
+              </div>
+
+              <div class="small">
+                {% if quest.stat_points %}
+                  {% for k, v in quest.stat_points.items() %}
+                    <strong>{{ k }}</strong>: {{ v }}{% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                {% else %}
+                  No stat points
+                {% endif %}
+              </div>
+
+              <div class="small">{{ quest.description }}</div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  {% else %}
+    <div class="goal-section">
+      <p>No goals found. Add some quests to see the board.</p>
+    </div>
+  {% endif %}
+{% endblock %}
