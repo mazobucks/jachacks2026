@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import secrets
+import json
 import werkzeug
 from flask import Flask, render_template, request, redirect, url_for, flash, g, jsonify
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
@@ -67,8 +68,6 @@ def close_connection(exception):
     if db is not None:
         db.close()
         
-# Store goals in memory for the session
-_session_goals = {}
 
 def convert_mock_data_to_objects(mock_goals):
     """Convert MOCK_GOALS dicts into Goal objects with Quest objects.
@@ -142,33 +141,80 @@ def logout():
 @app.route('/goals')
 def goals():
     """Display all goals with brief descriptions."""
-    db = get_db()
-    user_id = current_user.user_id
-    rows = db.execute("SELECT * FROM Goals WHERE user_id = ?", [user_id]).fetchall()
-    goals = [Goal(
-        exam_name=r[1], exam_subject=r[2], exam_date=r[3],
-        hours_willing=r[4], themes=r[5].split(',')
-    ) for r in rows]
+    goals = get_goals_for_user(current_user.user_id)
     return render_template('goals.html', goals=goals)
 
 
+
+def get_goals_for_user(user_id, goal_id=None):
+    """Fetch goals (and their quests) from the DB for a given user.
+    
+    If goal_id is provided, returns a list with just that one goal (or empty if not found).
+    Otherwise returns all goals for the user.
+    Each goal object has its quests already attached.
+    """
+    db = get_db()
+
+    if goal_id is not None:
+        goal_rows = db.execute(
+            "SELECT * FROM Goals WHERE id = ? AND user_id = ?", [goal_id, user_id]
+        ).fetchall()
+    else:
+        goal_rows = db.execute(
+            "SELECT * FROM Goals WHERE user_id = ?", [user_id]
+        ).fetchall()
+
+    goals = []
+    for goal_row in goal_rows:
+        goal = Goal(
+            exam_name=goal_row[1],
+            exam_subject=goal_row[2],
+            exam_date=goal_row[3],
+            hours_willing=goal_row[4],
+            themes=goal_row[5].split(','),
+        )
+        goal.progress = goal_row[6]
+        goal.completed = bool(goal_row[7])
+        goal.db_id = goal_row[0]
+
+        quest_rows = db.execute(
+            "SELECT * FROM Quests WHERE goal_id = ? AND user_id = ?", [goal_row[0], user_id]
+        ).fetchall()
+
+        for row in quest_rows:
+            quest = Quest(
+                name=row[1],
+                theme=row[2],
+                study_time=row[3],
+                date=row[5],
+                xp_reward=row[6],
+                stat_points=json.loads(row[7]) if row[7] else {},
+                associated_goal=goal,
+                description=row[8],
+            )
+            quest.time_spent = row[4]
+            quest.progress = row[9]
+            quest.completed = bool(row[10])
+            quest.failed = bool(row[11])
+            quest.db_id = row[0]
+            goal.quests.append(quest)  
+        goals.append(goal)
+    return goals
+
 @app.route('/quests')
 def quests():
-    """Display quests board from mock data."""
-    goals = convert_mock_data_to_objects(MOCK_GOALS)
-    # Enumerate goals and pass goal_id for each quest link
-    goals_with_ids = [(i, goal) for i, goal in enumerate(goals)]
-    return render_template('quests.html', goals=goals_with_ids, goal_id=None)
+    goals = get_goals_for_user(current_user.user_id)
+    return render_template('quests.html', goals=goals, goal_id=None)
 
 
 @app.route('/quests/<int:goal_id>')
 def quest_detail(goal_id):
     """Display quests for a specific goal."""
-    goals = convert_mock_data_to_objects(MOCK_GOALS)
-    if goal_id < 0 or goal_id >= len(goals):
+    goals = get_goals_for_user(current_user.user_id, goal_id)
+    if not goals:
         return render_template('quests.html', goals=[]), 404
     # Pass only the selected goal
-    return render_template('quests.html', goals=[goals[goal_id]], goal_id=goal_id)
+    return render_template('quests.html', goals=[goals[0]], goal_id=goal_id)
 
 
 @app.errorhandler(404)
@@ -177,29 +223,25 @@ def page_not_found(error):
     return render_template('404.html'), 404
 
 
-@app.route('/study/<int:goal_id>/<int:quest_idx>')
-def study(goal_id, quest_idx):
+@app.route('/study/<int:goal_id>/<int:quest_id>')
+def study(goal_id, quest_id):
     """Study session page for a specific quest."""
     # Reload or retrieve cached goals
-    if 'goals' not in _session_goals:
-        _session_goals['goals'] = convert_mock_data_to_objects(MOCK_GOALS)
+    goals = get_goals_for_user(current_user.user_id, goal_id)
     
-    goals = _session_goals['goals']
-    
-    if goal_id < 0 or goal_id >= len(goals):
+    if not goals:
         return render_template('404.html'), 404
     
-    goal = goals[goal_id]
+    goal = goals[0]
     
-    if quest_idx < 0 or quest_idx >= len(goal.quests):
+    quest = next((q for q in goal.quests if q.db_id == quest_id), None)
+    if quest is None:
         return render_template('404.html'), 404
-    
-    quest = goal.quests[quest_idx]
     
     # Convert study_time (hours) to seconds for the timer
     timer_seconds = int(quest.study_time * 3600)
     
-    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_idx=quest_idx, timer_seconds=timer_seconds)
+    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_idx=quest_id, timer_seconds=timer_seconds)
 
 
 @app.route('/api/study/<int:goal_id>/<int:quest_idx>', methods=['POST'])
