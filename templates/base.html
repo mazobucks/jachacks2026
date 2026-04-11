@@ -35,6 +35,21 @@
         nav a:hover {
             background-color: #555;
         }
+        .flash-messages {
+            max-width: 1200px;
+            margin: 1rem auto;
+            padding: 1rem;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            border-radius: 6px;
+        }
+        .flash-messages ul {
+            list-style: none;
+        }
+        .flash-messages li + li {
+            margin-top: 0.5rem;
+        }
         main {
             max-width: 1200px;
             margin: 2rem auto;
@@ -52,6 +67,19 @@
             <li><a href="{{ url_for('home') }}">Leaderboard</a></li>
         </ul>
     </nav>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-messages">
+          <ul>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <main>
         {% block content %}{% endblock %}
     </main>
