@@ -3,13 +3,13 @@ import sqlite3
 import secrets
 import werkzeug
 from flask import Flask, render_template, request, redirect, url_for, flash, g, jsonify
-from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user
+from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from Goal import Goal
 from Quests import Quest
 from mock_data import MOCK_GOALS
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
+app.secret_key = "HELLO-ashvdasuvd"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
