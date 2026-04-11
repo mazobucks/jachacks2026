@@ -142,7 +142,13 @@ def logout():
 @app.route('/goals')
 def goals():
     """Display all goals with brief descriptions."""
-    goals = convert_mock_data_to_objects(MOCK_GOALS)
+    db = get_db()
+    user_id = current_user.user_id
+    rows = db.execute("SELECT * FROM Goals WHERE user_id = ?", [user_id]).fetchall()
+    goals = [Goal(
+        exam_name=r[1], exam_subject=r[2], exam_date=r[3],
+        hours_willing=r[4], themes=r[5].split(',')
+    ) for r in rows]
     return render_template('goals.html', goals=goals)
 
 
