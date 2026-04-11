@@ -78,6 +78,13 @@ def quest_detail(goal_id):
     # Pass only the selected goal
     return render_template('quests.html', goals=[goals[goal_id]], goal_id=goal_id)
 
+
+@app.errorhandler(404)
+def page_not_found(error):
+    """Handle 404 errors."""
+    return render_template('404.html'), 404
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
