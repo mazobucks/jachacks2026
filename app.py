@@ -2,8 +2,11 @@ import os
 import sqlite3
 import secrets
 import werkzeug
-from flask import Flask, render_template, request, redirect, url_for, flash, g
+from flask import Flask, render_template, request, redirect, url_for, flash, g, jsonify
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user
+from Goal import Goal
+from Quests import Quest
+from mock_data import MOCK_GOALS
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
@@ -59,6 +62,54 @@ def close_connection(exception):
         db.close()
 
 @app.route("/")
+# Store goals in memory for the session
+_session_goals = {}
+
+
+def convert_mock_data_to_objects(mock_goals):
+    """Convert MOCK_GOALS dicts into Goal objects with Quest objects.
+    
+    Each goal dict is converted to a Goal instance, and its quest dicts
+    are converted to Quest objects and added to the goal via add_quest().
+    """
+    goals = []
+    for goal_data in mock_goals:
+        # Create Goal object from dict
+        goal = Goal(
+            exam_name=goal_data.get("exam_name", ""),
+            exam_subject=goal_data.get("exam_subject", ""),
+            exam_date=goal_data.get("exam_date", ""),
+            hours_willing=goal_data.get("hours_willing", 0),
+            themes=goal_data.get("themes", []),
+        )
+        
+        # Convert each quest dict to Quest object and add to goal
+        quest_dicts = goal_data.get("quests", [])
+        for quest_dict in quest_dicts:
+            quest = Quest(
+                name=quest_dict.get("name", ""),
+                theme=quest_dict.get("theme", ""),
+                study_time=quest_dict.get("study_time", 0),
+                date=quest_dict.get("date", ""),
+                xp_reward=quest_dict.get("xp_reward", 0),
+                stat_points=quest_dict.get("stat_points", {}),
+                associated_goal=goal,
+                description=quest_dict.get("description", ""),
+            )
+            # Set quest progress and completed state from mock data
+            quest.progress = quest_dict.get("progress", 0.0)
+            quest.completed = quest_dict.get("completed", False)
+            
+            goal.add_quest(quest)
+        
+        # After all quests are added, recalc_progress() has been called
+        # No need to override the calculated progress from the quest completion counts
+        goals.append(goal)
+    
+    return goals
+
+
+@app.route('/')
 def home():
     return render_template("home.html")
 
@@ -83,7 +134,4 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("home"))
-
-if __name__ == "__main__":
-    app.run(debug=True)
 

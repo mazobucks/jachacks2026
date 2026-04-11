@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %} Goals {% endblock %}
+
+{% block content %}
+  <style>
+    .goals-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .goal-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(2, 6, 23, 0.05);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .goal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    .goal-card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .goal-card-subject {
+      font-size: 0.95rem;
+      color: #475569;
+      font-weight: 500;
+    }
+    .goal-card-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .goal-progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .progress-bar-small {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-inner-small {
+      height: 100%;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      font-size: 0.82rem;
+      color: #334155;
+      font-weight: 600;
+    }
+    .quest-count {
+      font-size: 0.9rem;
+      color: #64748b;
+      padding: 0.5rem 0;
+      border-top: 1px solid rgba(2, 6, 23, 0.05);
+    }
+    .cta-text {
+      font-size: 0.85rem;
+      color: #3b82f6;
+      font-weight: 600;
+      padding-top: 0.5rem;
+    }
+  </style>
+
+  <div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Study Goals</h1>
+    <p style="color: #64748b;">Select a goal to view and track all related quests.</p>
+  </div>
+
+  {% if goals %}
+    <div class="goals-container">
+      {% for goal in goals %}
+        <a href="{{ url_for('quest_detail', goal_id=loop.index0) }}" class="goal-card">
+          <div>
+            <div class="goal-card-title">{{ goal.exam_name }}</div>
+            <div class="goal-card-subject">{{ goal.exam_subject }}</div>
+          </div>
+
+          <div class="goal-card-meta">
+            <div class="meta-item">
+              <span>📅</span>
+              <span>{{ goal.exam_date }}</span>
+            </div>
+            <div class="meta-item">
+              <span>⏱️</span>
+              <span>{{ goal.hours_willing }}h</span>
+            </div>
+          </div>
+
+          <div class="goal-progress-section">
+            <div class="progress-text">Progress: {{ (goal.progress|default(0))|round(1) }}%</div>
+            <div class="progress-bar-small">
+              <div class="progress-inner-small" style="width: {{ goal.progress|default(0) }}%"></div>
+            </div>
+          </div>
+
+          <div class="quest-count">
+            {{ goal.quests|length }} quest{{ 's' if goal.quests|length != 1 else '' }}
+          </div>
+
+          <div class="cta-text">View Details →</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem; background: #f8fafc; border-radius: 10px;">
+      <p style="color: #64748b; font-size: 1rem;">No goals found. Start by creating a study goal.</p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %} Quests Board {% endblock %}
+
+{% block content %}
+  {% if goal_id is defined %}
+    <div style="margin-bottom: 1.5rem;">
+      <a href="{{ url_for('goals') }}" style="color: #3b82f6; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+        ← Back to Goals
+      </a>
+    </div>
+  {% endif %}
+
+  {% if goals %}
+    {% if goal_id is defined and goal_id is not none %}
+      {% set current_goal_id = goal_id %}
+      {% for goal in goals %}
+        <section class="goal-section">
+          <div class="goal-header">
+            <div>
+              <div class="goal-title">{{ goal.exam_name }}</div>
+              <div class="goal-meta">{{ goal.exam_subject }} • Exam: {{ goal.exam_date }} • Willing hours: {{ goal.hours_willing }}</div>
+            </div>
+            <div class="goal-meta small">Progress: {{ (goal.progress|default(0))|round(1) }}% {% if goal.completed %}• Completed{% endif %}</div>
+          </div>
+
+          <div class="quest-grid">
+            {% for quest in goal.quests %}
+              <article class="quest-card" style="display: flex; flex-direction: column;">
+                <div style="flex: 1;">
+                  <div class="quest-title">{{ quest.name }}</div>
+                  <div class="quest-theme">{{ quest.theme }}</div>
+                </div>
+
+                <div class="quest-meta">
+                  <span>📅 {{ quest.date }}</span>
+                  <span>⏱️ {{ quest.study_time }}h</span>
+                </div>
+
+                <div class="progress-bar" aria-hidden="true">
+                  <div class="progress-inner" style="width: {{ quest.progress|default(0) }}%"></div>
+                </div>
+
+                <div class="quest-meta">
+                  <span class="small">XP: {{ quest.xp_reward }}</span>
+                </div>
+
+                <div class="small">
+                  {% if quest.stat_points %}
+                    {% for k, v in quest.stat_points.items() %}
+                      <strong>{{ k }}</strong>: {{ v }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    No stat points
+                  {% endif %}
+                </div>
+
+                <div class="small">{{ quest.description }}</div>
+
+                <a href="{{ url_for('study', goal_id=current_goal_id, quest_idx=loop.index0) }}" style="text-decoration: none; margin-top: auto; padding-top: 1rem;">
+                  <button style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                    Study 📖
+                  </button>
+                </a>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+    {% else %}
+      {% for goal_id, goal in goals %}
+        <section class="goal-section">
+          <div class="goal-header">
+            <div>
+              <div class="goal-title">{{ goal.exam_name }}</div>
+              <div class="goal-meta">{{ goal.exam_subject }} • Exam: {{ goal.exam_date }} • Willing hours: {{ goal.hours_willing }}</div>
+            </div>
+            <div class="goal-meta small">Progress: {{ (goal.progress|default(0))|round(1) }}% {% if goal.completed %}• Completed{% endif %}</div>
+          </div>
+
+          <div class="quest-grid">
+            {% for quest in goal.quests %}
+              <article class="quest-card" style="display: flex; flex-direction: column;">
+                <div style="flex: 1;">
+                  <div class="quest-title">{{ quest.name }}</div>
+                  <div class="quest-theme">{{ quest.theme }}</div>
+                </div>
+
+                <div class="quest-meta">
+                  <span>📅 {{ quest.date }}</span>
+                  <span>⏱️ {{ quest.study_time }}h</span>
+                </div>
+
+                <div class="progress-bar" aria-hidden="true">
+                  <div class="progress-inner" style="width: {{ quest.progress|default(0) }}%"></div>
+                </div>
+
+                <div class="quest-meta">
+                  <span class="small">XP: {{ quest.xp_reward }}</span>
+                </div>
+
+                <div class="small">
+                  {% if quest.stat_points %}
+                    {% for k, v in quest.stat_points.items() %}
+                      <strong>{{ k }}</strong>: {{ v }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    No stat points
+                  {% endif %}
+                </div>
+
+                <div class="small">{{ quest.description }}</div>
+
+                <a href="{{ url_for('study', goal_id=goal_id, quest_idx=loop.index0) }}" style="text-decoration: none; margin-top: auto; padding-top: 1rem;">
+                  <button style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                    Study 📖
+                  </button>
+                </a>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+    {% endif %}
+  {% else %}
+    <div class="goal-section">
+      <p>No goals found. Add some quests to see the board.</p>
+    </div>
+  {% endif %}
+{% endblock %}
+

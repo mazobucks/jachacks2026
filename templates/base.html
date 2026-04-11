@@ -2,98 +2,114 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}JaHacks 2026{% endblock %}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}JaHacks 2026{% endblock %}</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                color: #222;
+            }
+            nav {
+                background-color: #1f2937;
+                padding: 1rem 2rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            }
+            nav ul {
+                list-style: none;
+                display: flex;
+                gap: 1.25rem;
+                justify-content: center;
+                align-items: center;
+            }
+            nav a {
+                color: white;
+                text-decoration: none;
+                padding: 0.45rem 0.9rem;
+                border-radius: 6px;
+                transition: background-color 0.18s, transform 0.12s;
+                font-weight: 600;
+                font-size: 0.95rem;
+            }
+            nav a:hover {
+                background-color: #374151;
+                transform: translateY(-1px);
+            }
+            main {
+                max-width: 1200px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-        }
+            /* Quest board */
+            .goal-section {
+                margin-bottom: 2.25rem;
+                background: white;
+                border-radius: 10px;
+                padding: 1rem 1.25rem;
+                box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+            }
+            .goal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            .goal-title {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .goal-meta { color: #475569; font-size: 0.92rem; }
 
-        nav {
-            background-color: #333;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+            .quest-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 1rem;
+            }
 
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        nav a:hover {
-            background-color: #555;
-        }
-
-        .flash-messages {
-            max-width: 1200px;
-            margin: 1rem auto;
-            padding: 1rem;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            border-radius: 6px;
-        }
-
-        .flash-messages ul {
-            list-style: none;
-        }
-
-        .flash-messages li+li {
-            margin-top: 0.5rem;
-        }
-
-        main {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-    </style>
-</head>
-
-<body>
-    <nav>
-        <ul>
-            <li><a href="{{ url_for('home') }}">Courses</a></li>
-            <li><a href="{{ url_for('home') }}">Home</a></li>
-            <li><a href="{{ url_for('home') }}">Calendar</a></li>
-            <li><a href="{{ url_for('home') }}">Study</a></li>
-            <li><a href="{{ url_for('home') }}">Leaderboard</a></li>
-        </ul>
-    </nav>
-
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <div class="flash-messages">
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-    {% endwith %}
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-</body>
-
-</html>
+            .quest-card {
+                background: linear-gradient(180deg,#ffffff,#f8fafc);
+                border-radius: 8px;
+                padding: 0.9rem;
+                box-shadow: 0 4px 10px rgba(2,6,23,0.04);
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+                border: 1px solid rgba(2,6,23,0.04);
+            }
+            .quest-title { font-weight:700; color:#0b1220; font-size:1rem }
+            .quest-theme { font-size:0.85rem; color:#475569 }
+            .quest-meta { display:flex; justify-content:space-between; font-size:0.85rem; color:#334155 }
+            .progress-bar { background:#e6eef8; height:10px; border-radius:999px; overflow:hidden }
+            .progress-inner { height:100%; background:linear-gradient(90deg,#06b6d4,#3b82f6); width:0% }
+            .small { font-size:0.82rem; color:#64748b }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('quests') }}">Quests</a></li>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('goals') }}">Goals</a></li>
+                <li><a href="{{ url_for('home') }}">Calendar</a></li>
+                <li><a href="{{ url_for('home') }}">Study</a></li>
+                <li><a href="{{ url_for('home') }}">Leaderboard</a></li>
+                <li><a href="{{ url_for('home') }}">plan</a></li>
+            </ul>
+        </nav>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+    </html>
