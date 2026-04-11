@@ -28,6 +28,12 @@ if not database_exists:
         "CREATE TABLE Stats (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(255), points INTEGER NOT NULL CHECK(points >= 0 AND points <= 100), user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES Users(id))"
     )
     db.execute(
+        "CREATE TABLE Goals (id INTEGER PRIMARY KEY AUTOINCREMENT, exam_name VARCHAR(255) NOT NULL, exam_subject VARCHAR(255) NOT NULL, exam_date VARCHAR(255) NOT NULL, hours_willing REAL NOT NULL, themes TEXT NOT NULL, progress REAL DEFAULT 0.0 CHECK(progress >= 0.0 AND progress <= 100.0), completed BOOLEAN DEFAULT 0, user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES Users(id))"
+    )
+    db.execute(
+        "CREATE TABLE Quests (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) NOT NULL, theme VARCHAR(255) NOT NULL, study_time REAL NOT NULL, time_spent REAL DEFAULT 0.0, date VARCHAR(255) NOT NULL, xp_reward INTEGER DEFAULT 0, stat_points TEXT, description TEXT DEFAULT '', progress REAL DEFAULT 0.0 CHECK(progress >= 0.0 AND progress <= 100.0), completed BOOLEAN DEFAULT 0, failed BOOLEAN DEFAULT 0, goal_id INTEGER NOT NULL, user_id INTEGER NOT NULL, FOREIGN KEY (goal_id) REFERENCES Goals(id), FOREIGN KEY (user_id) REFERENCES Users(id))"
+    )
+    db.execute(
         "INSERT INTO Users (name, grade, password) VALUES (?, ?, ?)",
         ("Test", "A", hash_password("Test", "1234")),
     )
