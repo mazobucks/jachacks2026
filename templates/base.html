@@ -150,6 +150,7 @@
 
             .flash-messages ul {
                 list-style: none;
+                padding: 0;
             }
 
             .flash-messages li+li {
@@ -182,7 +183,11 @@
     {% endif %}
     {% endwith %}
     <main>
-        {% block content %}{% endblock %}
+        {% if current_user.is_authenticated %}
+            {% block content %}{% endblock %}
+        {% else %}
+            <a href="{{ url_for('login') }}">You are not logged in!</a>
+        {% endif %}
     </main>
 </body>
 
