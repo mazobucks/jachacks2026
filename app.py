@@ -43,10 +43,8 @@ def convert_mock_data_to_objects(mock_goals):
             
             goal.add_quest(quest)
         
-        # Set goal progress after quests are added (recalc_progress is called automatically)
-        goal.progress = goal_data.get("progress", goal.progress)
-        goal.completed = goal_data.get("completed", goal.completed)
-        
+        # After all quests are added, recalc_progress() has been called
+        # No need to override the calculated progress from the quest completion counts
         goals.append(goal)
     
     return goals
@@ -57,11 +55,28 @@ def home():
     return render_template('home.html')
 
 
+@app.route('/goals')
+def goals():
+    """Display all goals with brief descriptions."""
+    goals = convert_mock_data_to_objects(MOCK_GOALS)
+    return render_template('goals.html', goals=goals)
+
+
 @app.route('/quests')
 def quests():
     """Display quests board from mock data."""
     goals = convert_mock_data_to_objects(MOCK_GOALS)
     return render_template('quests.html', goals=goals)
+
+
+@app.route('/quests/<int:goal_id>')
+def quest_detail(goal_id):
+    """Display quests for a specific goal."""
+    goals = convert_mock_data_to_objects(MOCK_GOALS)
+    if goal_id < 0 or goal_id >= len(goals):
+        return render_template('quests.html', goals=[]), 404
+    # Pass only the selected goal
+    return render_template('quests.html', goals=[goals[goal_id]], goal_id=goal_id)
 
 if __name__ == '__main__':
     app.run(debug=True)

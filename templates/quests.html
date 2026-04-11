@@ -3,6 +3,14 @@
 {% block title %} Quests Board {% endblock %}
 
 {% block content %}
+  {% if goal_id is defined %}
+    <div style="margin-bottom: 1.5rem;">
+      <a href="{{ url_for('goals') }}" style="color: #3b82f6; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+        ← Back to Goals
+      </a>
+    </div>
+  {% endif %}
+
   {% if goals %}
     {% for goal in goals %}
       <section class="goal-section">
@@ -11,7 +19,7 @@
             <div class="goal-title">{{ goal.exam_name }}</div>
             <div class="goal-meta">{{ goal.exam_subject }} • Exam: {{ goal.exam_date }} • Willing hours: {{ goal.hours_willing }}</div>
           </div>
-          <div class="goal-meta small">Progress: {{ (goal.progress|default(0)) }}% {% if goal.completed %}• Completed{% endif %}</div>
+          <div class="goal-meta small">Progress: {{ (goal.progress|default(0))|round(1) }}% {% if goal.completed %}• Completed{% endif %}</div>
         </div>
 
         <div class="quest-grid">
@@ -55,3 +63,4 @@
     </div>
   {% endif %}
 {% endblock %}
+

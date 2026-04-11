@@ -123,34 +123,27 @@ class Goal:
         return total
 
     def recalc_progress(self) -> float:
-        """Recalculate goal progress as a weighted average of quest progress by study_time.
+        """Recalculate goal progress based on the number of completed quests.
 
+        Progress = (completed_quests / total_quests) * 100%
         If no quests are attached, returns current `self.progress` unchanged.
         """
         if not self.quests:
             return self.progress
 
-        weighted_sum = 0.0
-        total_weight = 0.0
+        completed_count = 0
         for q in self.quests:
             if isinstance(q, dict):
-                st = q.get("study_time", 0)
-                pr = q.get("progress", 0)
+                completed = q.get("completed", False)
             else:
-                st = getattr(q, "study_time", 0)
-                pr = getattr(q, "progress", 0)
-            try:
-                weight = float(st)
-                prog = float(pr)
-            except Exception:
-                continue
-            weighted_sum += weight * prog
-            total_weight += weight
+                completed = getattr(q, "completed", False)
+            
+            if completed:
+                completed_count += 1
 
-        if total_weight <= 0:
-            return self.progress
-
-        self.progress = min(100.0, max(0.0, weighted_sum / total_weight))
+        total_quests = len(self.quests)
+        self.progress = (completed_count / total_quests) * 100.0
+        self.progress = min(100.0, max(0.0, self.progress))
         self.completed = self.progress >= 100.0
         return self.progress
 
