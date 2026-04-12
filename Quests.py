@@ -131,7 +131,7 @@ class Quest:
 
 		Note: `associated_goal` will be left as the raw value from the dict.
 		"""
-		return cls(
+		quest = cls(
 			name=data["name"],
 			theme=data.get("theme", ""),
 			study_time=data.get("study_time", 0),
@@ -141,8 +141,9 @@ class Quest:
 			associated_goal=data.get("associated_goal", None),
 			description=data.get("description", ""),
 		)
-		# Restore time_spent and failed state if present
+		# FIXED: Restore time_spent, progress, completed, and failed state BEFORE return
 		quest.time_spent = data.get("time_spent", 0.0)
+		quest.progress = data.get("progress", 0.0)
+		quest.completed = data.get("completed", False)
 		quest.failed = data.get("failed", False)
 		return quest
-

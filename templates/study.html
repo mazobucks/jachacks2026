@@ -131,6 +131,11 @@
     }
     .quiz-section.show {
       display: block;
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .quiz-title {
       font-size: 1.5rem;
@@ -143,35 +148,35 @@
       font-size: 1rem;
       margin-bottom: 1.5rem;
     }
-    .quiz-buttons {
+    #quiz-content h4 {
+      text-align: left;
+      margin-bottom: 1.5rem;
+      color: #0f172a;
+      font-size: 1.1rem;
+    }
+    .quiz-options {
+      text-align: left;
       display: flex;
-      gap: 1rem;
-      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
     }
-    .btn-quiz {
-      padding: 0.75rem 2rem;
-      border: none;
+    .quiz-option-btn {
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
       border-radius: 8px;
-      font-weight: 600;
-      font-size: 1rem;
       cursor: pointer;
+      background: white;
       transition: all 0.2s ease;
+      text-align: left;
+      font-size: 0.95rem;
+      color: #0f172a;
     }
-    .btn-pass {
-      background: #10b981;
-      color: white;
+    .quiz-option-btn:hover {
+      background: #f0f9ff;
+      border-color: #3b82f6;
     }
-    .btn-pass:hover {
-      background: #059669;
-      transform: scale(1.05);
-    }
-    .btn-fail {
-      background: #ef4444;
-      color: white;
-    }
-    .btn-fail:hover {
-      background: #dc2626;
-      transform: scale(1.05);
+    .quiz-option-btn:disabled {
+      cursor: not-allowed;
     }
     .timer-status {
       font-size: 0.85rem;
@@ -232,19 +237,13 @@
     <div class="quiz-section" id="quizSection">
       <div class="quiz-title">Quiz Time! 🎯</div>
       <div class="quiz-message">
-        Great work studying! Now let's test what you've learned.<br>
-        Do you think you understand the material?
+        Great work studying! Now let's test what you've learned.
       </div>
-      <div class="quiz-buttons">
-        <form method="POST" action="{{ url_for('quiz_result', goal_id=goal_id, quest_id=quest_id, result='pass') }}">
-          <input type="hidden" name="time_spent_seconds" id="timeSpentInput" value="0">
-          <button type="submit" class="btn-quiz btn-pass">Pass Quiz ✓</button>
-        </form>
-        <form method="POST" action="{{ url_for('quiz_result', goal_id=goal_id, quest_id=quest_id, result='fail') }}">
-          <input type="hidden" name="time_spent_seconds" id="timeSpentInput2" value="0">
-          <button type="submit" class="btn-quiz btn-fail">Fail Quiz ✗</button>
-        </form>
-      </div>
+      <div id="quiz-content"></div>
+      <form id="quizForm" method="POST" action="{{ url_for('study_submit', goal_id=goal_id, quest_id=quest_id) }}">
+        <input type="hidden" name="result" id="resultInput" value="">
+        <input type="hidden" name="time_spent_seconds" id="timeSpentInput" value="">
+      </form>
     </div>
   </div>
 
@@ -269,8 +268,12 @@
       document.getElementById('progressBar').style.width = progress + '%';
       document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
       
-      const status = Math.ceil(timeRemaining / 60) + ' min remaining';
-      document.getElementById('timerStatus').textContent = status;
+      if (timeRemaining <= 0) {
+        document.getElementById('timerStatus').textContent = "Time's up!";
+      } else {
+        const status = Math.ceil(timeRemaining / 60) + ' min remaining';
+        document.getElementById('timerStatus').textContent = status;
+      }
     }
 
     function startTimer() {
@@ -292,8 +295,6 @@
       if (isStudying) {
         clearInterval(timerInterval);
         isStudying = false;
-        timeRemaining = 0;
-        updateDisplay();
         document.getElementById('timerStatus').textContent = 'Study session completed!';
         showQuiz();
       }
@@ -305,16 +306,152 @@
       }
     }
 
-    function showQuiz() {
-      const timeSpentHours = ({{ timer_seconds }} - timeRemaining) / 3600;
-      document.getElementById('timeSpentInput').value = timeSpentHours;
-      document.getElementById('timeSpentInput2').value = timeSpentHours;
-      document.getElementById('quizSection').classList.add('show');
-      document.querySelectorAll('.study-controls').forEach(el => el.style.display = 'none');
-      
+    // Quiz logic
+    const quizData = {{ quiz.questions|tojson if quiz else '[]' }};
+    let currentIdx = 0;
+    let score = 0;
+
+    function renderQuestion() {
+        const container = document.getElementById('quiz-content');
+        container.innerHTML = ''; // Clear container
+
+        if (quizData.length === 0) {
+            container.innerHTML = "<p style='color: #ef4444; margin: 2rem 0;'>❌ No quiz questions available. Please try again later.</p>";
+            return;
+        }
+
+        const q = quizData[currentIdx];
+
+        // Create Question Heading
+        const h4 = document.createElement('h4');
+        h4.textContent = `Question ${currentIdx + 1} of ${quizData.length}: ${q.question}`;
+        container.appendChild(h4);
+
+        // Create Options Container
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'quiz-options';
+
+        // The first option [0] is always the correct answer (set by Quiz.py/Gemini)
+        const correctAnswer = q.answers[0];
+        const shuffledOptions = [...q.answers].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'quiz-option-btn';
+            btn.textContent = opt;
+            
+            btn.addEventListener('click', () => {
+                // Check if answer is correct
+                const isCorrect = opt === correctAnswer;
+                if (isCorrect) {
+                    score++;
+                    btn.style.background = '#10b981';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#10b981';
+                } else {
+                    btn.style.background = '#ef4444';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = '#ef4444';
+                }
+                
+                // Disable all buttons after selection
+                Array.from(btnGroup.querySelectorAll('button')).forEach(b => {
+                    b.disabled = true;
+                });
+                
+                // Move to next question after delay
+                setTimeout(() => {
+                    currentIdx++;
+                    if (currentIdx < quizData.length) {
+                        renderQuestion();
+                    } else {
+                        showFinalResults();
+                    }
+                }, 1500);
+            });
+            btnGroup.appendChild(btn);
+        });
+
+        container.appendChild(btnGroup);
     }
 
+    function showFinalResults() {
+        const container = document.getElementById('quiz-content');
+        container.innerHTML = '';
 
+        const passThreshold = 0.7;
+        const passed = (score / quizData.length) >= passThreshold;
+        
+        // Update the hidden input for the form submission
+        document.getElementById('resultInput').value = passed ? 'pass' : 'fail';
+
+        const title = document.createElement('h3');
+        title.textContent = passed ? "✨ Quest Mastered!" : "❌ Quiz Failed";
+        title.style.cssText = `color: ${passed ? '#059669' : '#dc2626'}; font-size: 1.5rem; margin-bottom: 1rem; text-align: center;`;
+
+        const scoreDisplay = document.createElement('p');
+        scoreDisplay.style.cssText = "font-size: 2rem; font-weight: 800; margin: 1rem 0; text-align: center;";
+        scoreDisplay.textContent = `${score} / ${quizData.length}`;
+
+        const percentage = document.createElement('p');
+        const percentVal = Math.round((score / quizData.length) * 100);
+        percentage.style.cssText = "font-size: 1rem; color: #64748b; margin-bottom: 1rem; text-align: center;";
+        percentage.textContent = `${percentVal}% correct`;
+
+        const message = document.createElement('p');
+        message.style.cssText = "margin-bottom: 1.5rem; color: #64748b; text-align: center;";
+        if (passed) {
+            message.textContent = "Excellent! Stats and XP have been added to your profile.";
+        } else {
+            message.textContent = "You didn't reach the 70% threshold. Review your notes and try again!";
+        }
+
+        const submitBtn = document.createElement('button');
+        submitBtn.type = 'button';
+        submitBtn.style.cssText = "padding: 0.75rem 2rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;";
+        submitBtn.textContent = "Finish & Claim Rewards";
+        submitBtn.style.display = 'block';
+        submitBtn.style.margin = '0 auto';
+
+        submitBtn.addEventListener('click', () => {
+            document.getElementById('quizForm').submit();
+        });
+
+        submitBtn.addEventListener('mouseover', () => {
+            submitBtn.style.background = '#2563eb';
+            submitBtn.style.transform = 'scale(1.05)';
+        });
+
+        submitBtn.addEventListener('mouseout', () => {
+            submitBtn.style.background = '#3b82f6';
+            submitBtn.style.transform = 'scale(1)';
+        });
+
+        container.append(title, scoreDisplay, percentage, message, submitBtn);
+    }
+
+    function showQuiz() {
+        // Calculate time spent
+        const timeSpentSeconds = {{ timer_seconds }} - timeRemaining;
+        const timeSpentHours = timeSpentSeconds / 3600;
+        
+        // Update hidden input
+        document.getElementById('timeSpentInput').value = timeSpentHours.toFixed(2);
+        
+        // Show the quiz section
+        document.getElementById('quizSection').classList.add('show');
+        
+        // Hide study controls
+        document.querySelectorAll('.study-controls').forEach(el => el.style.display = 'none');
+
+        // Start rendering the quiz
+        if (quizData.length > 0) {
+            renderQuestion();
+        } else {
+            document.getElementById('quiz-content').innerHTML = "<p style='color: #ef4444; margin: 2rem 0;'>❌ Error: No quiz questions were generated. Please try again.</p>";
+        }
+    }
 
     // Start the timer when page loads
     window.addEventListener('load', startTimer);

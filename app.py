@@ -503,50 +503,46 @@ def study(goal_id, quest_id):
     # Convert study_time (hours) to seconds for the timer
     timer_seconds = int(quest.study_time * 3600)
     
-    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_id=quest_id, timer_seconds=timer_seconds)
+    
+    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_id=quest_id, timer_seconds=timer_seconds, quiz=Quiz(quest))
 
 
-@app.route('/study/<int:goal_id>/<int:quest_id>/<result>', methods=['POST'])
+
+
+@app.route('/study_submit/<int:goal_id>/<int:quest_id>', methods=['POST'])
 @login_required
-def quiz_result(goal_id, quest_id, result):
-    if result not in ('pass', 'fail'):
-        return render_template('404.html'), 404
+def study_submit(goal_id, quest_id):
+    result = request.form.get('result')
+    time_spent_hours = float(request.form.get('time_spent_seconds', '0'))
+    db = get_db()
+    
+    if result == 'pass':
+        db.execute(
+            "UPDATE Quests SET completed = 1, time_spent = ?, progress = 100.0 WHERE id = ? AND user_id = ?", 
+            [time_spent_hours, quest_id, current_user.user_id]
+        )
+        quest_row = db.execute("SELECT stat_points FROM Quests WHERE id = ? AND user_id = ?", [quest_id, current_user.user_id]).fetchone()
+        
+        if quest_row and quest_row['stat_points']:
+            stats_to_add = json.loads(quest_row['stat_points'])
+            for stat_title, points in stats_to_add.items():
+                existing = db.execute("SELECT id FROM Stats WHERE title = ? AND user_id = ?", (stat_title, current_user.user_id)).fetchone()
+                if existing:
+                    db.execute("UPDATE Stats SET points = MIN(100, points + ?) WHERE id = ?", (int(points), existing['id']))
+                else:
+                    db.execute("INSERT INTO Stats (title, points, user_id) VALUES (?, ?, ?)", (stat_title, int(points), current_user.user_id))
+        flash("✨ Quest Mastered! Your stats have increased.", "success")
+    else:
+        db.execute("UPDATE Quests SET failed = 1, time_spent = ? WHERE id = ? AND user_id = ?", [time_spent_hours, quest_id, current_user.user_id])
+        flash("❌ Quiz failed. Review your notes and try again!", "warning")
 
-    # Save time spent
-    time_spent_hours = float(request.form.get('time_spent_seconds', 0))
-    row = get_db().execute(
-        "SELECT study_time FROM Quests WHERE id = ? AND user_id = ?",
-        [quest_id, current_user.user_id]
-    ).fetchone()
-    if not row:
-        return render_template('404.html'), 404
-
-    new_progress = min(100.0, (time_spent_hours / row[0]) * 100.0)
-    completed = 1 if result == 'pass' else 0
-    failed    = 1 if result == 'fail' else 0
-
-    # Update quest
-    get_db().execute(
-        "UPDATE Quests SET time_spent = ?, progress = ?, completed = ?, failed = ? WHERE id = ? AND user_id = ?",
-        [time_spent_hours, new_progress, completed, failed, quest_id, current_user.user_id]
-    )
-
-    # Recalc and update goal progress
-    quest_rows = get_db().execute(
-        "SELECT completed FROM Quests WHERE goal_id = ? AND user_id = ?",
-        [goal_id, current_user.user_id]
-    ).fetchall()
+    quest_rows = db.execute("SELECT completed FROM Quests WHERE goal_id = ? AND user_id = ?", [goal_id, current_user.user_id]).fetchall()
     total = len(quest_rows)
-    done = sum(1 for r in quest_rows if r[0])
-    goal_progress = (done / total * 100.0) if total else 0.0
-
-    get_db().execute(
-        "UPDATE Goals SET progress = ?, completed = ? WHERE id = ? AND user_id = ?",
-        [goal_progress, 1 if goal_progress >= 100.0 else 0, goal_id, current_user.user_id]
-    )
-    get_db().commit()
-
-    flash(f"Quest {'passed' if result == 'pass' else 'failed'}!")
+    done = sum(1 for r in quest_rows if r['completed'])
+    goal_progress = (done / total * 100.0) if total > 0 else 0.0
+    
+    db.execute("UPDATE Goals SET progress = ?, completed = ? WHERE id = ? AND user_id = ?", [goal_progress, 1 if goal_progress >= 100.0 else 0, goal_id, current_user.user_id])
+    db.commit()
     return redirect(url_for('goal_detail', goal_id=goal_id))
 
 def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, themes_str, files):

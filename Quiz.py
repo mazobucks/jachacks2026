@@ -36,8 +36,10 @@ class Quiz:
             quizDic = json.loads(response.text)
             self.name = quizDic["quiz_name"]
             for question in quizDic["questions"]:
-                self.questions.append(Question(question["question"], question["options"]))
-            
+                self.questions.append({
+                    'question': question["question"],
+                    'answers': question["options"]
+                })
         except json.JSONDecodeError:
             print("Something went wrong with the quiz generation")
         
