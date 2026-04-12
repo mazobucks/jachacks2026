@@ -104,6 +104,7 @@ def get_db():
     db = g.get("_database")
     if not db:
         g._database = sqlite3.connect(path)
+        g._database.row_factory = sqlite3.Row
         db = g._database
     return db
 
