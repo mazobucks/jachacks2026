@@ -201,7 +201,27 @@ def goals():
     goals = get_goals_for_user(current_user.user_id)
     return render_template('goals.html', goals=goals)
 
+@app.route('/delete_goal/<int:goal_id>', methods=['POST'])
+@login_required
+def delete_goal(goal_id):
+    db = get_db()
+    
+    # Verify the goal belongs to the current user before deleting
+    goal = db.execute("SELECT id FROM Goals WHERE id = ? AND user_id = ?", 
+                      (goal_id, current_user.user_id)).fetchone()
+    
+    if goal:
+        # Delete associated quests first (if your DB isn't set to CASCADE)
+        db.execute("DELETE FROM Quests WHERE goal_id = ? AND user_id = ?", (goal_id, current_user.user_id))
+        
+        # Delete the goal
+        db.execute("DELETE FROM Goals WHERE id = ? AND user_id = ?", (goal_id, current_user.user_id))
+        db.commit()
+        flash("Goal and associated quests deleted successfully.")
+    else:
+        flash("Goal not found or unauthorized.")
 
+    return redirect(url_for('goals'))
 
 def get_goals_for_user(user_id, goal_id=None):
     """Fetch goals (and their quests) from the DB for a given user.
