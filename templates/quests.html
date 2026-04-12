@@ -171,9 +171,18 @@
                         {% endif %}
                     </div>
 
-                    <a href="{{ url_for('study', goal_id=goal.db_id, quest_id=quest.db_id) }}" style="text-decoration: none;">
-                        <button class="study-btn">Study 📖</button>
-                    </a>
+                    {% if quest.completed %}
+                        <button style="width: 100%; padding: 0.75rem; background: #94a3b8; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: not-allowed;" disabled>
+                            Completed ✅
+                        </button>
+                    {% else %}
+                        <a href="{{ url_for('study', goal_id=goal.db_id, quest_id=quest.db_id) }}" style="text-decoration: none;">
+                            <button style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                Study 📖
+                            </button>
+                        </a>
+                    {% endif %}
+                    
                 </article>
                 {% endfor %}
             </div>

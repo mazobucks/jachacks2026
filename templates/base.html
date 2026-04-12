@@ -162,13 +162,11 @@
 <body>
     <nav>
         <ul>
+             <li><a href="{{ url_for('home') }}">Home</a></li>
             <li><a href="{{ url_for('quests') }}">Quests</a></li>
-            <li><a href="{{ url_for('home') }}">Home</a></li>
             <li><a href="{{ url_for('goals') }}">Goals</a></li>
-            <li><a href="{{ url_for('home') }}">Calendar</a></li>
-            <li><a href="{{ url_for('home') }}">Study</a></li>
-            <li><a href="{{ url_for('home') }}">Leaderboard</a></li>
             <li><a href="{{ url_for('plan') }}">plan</a></li>
+            <li><a href="{{ url_for('home') }}">Leaderboard</a></li>
         </ul>
     </nav>
     {% with messages = get_flashed_messages() %}

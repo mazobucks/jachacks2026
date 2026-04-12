@@ -82,6 +82,35 @@
       font-weight: 600;
       padding-top: 0.5rem;
     }
+    .goal-card {
+        position: relative; /* Allows absolute positioning inside */
+    }
+
+    .delete-goal-form {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 10; /* Keeps it above the card link */
+    }
+
+    .delete-btn {
+        background: #fee2e2;
+        color: #ef4444;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .delete-btn:hover {
+        background: #ef4444;
+        color: white;
+    }
   </style>
 
   <div style="margin-bottom: 2rem;">
@@ -93,6 +122,7 @@
     <div class="goals-container">
       {% for goal in goals %}
         <a href="{{ url_for('goal_detail', goal_id=goal.db_id) }}" class="goal-card">
+
           <div>
             <div class="goal-card-title">{{ goal.exam_name }}</div>
             <div class="goal-card-subject">{{ goal.exam_subject }}</div>
@@ -121,6 +151,17 @@
           </div>
 
           <div class="cta-text">View Details →</div>
+
+          <form action="{{ url_for('delete_goal', goal_id=goal.db_id) }}" 
+                method="POST" 
+                style="margin-top: 10px;"
+                onsubmit="return confirm('Are you sure? This will delete all quests for this goal.');">
+              <button type="submit" 
+                      style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; font-weight: 600; padding: 0;">
+                  🗑️ Delete Goal
+              </button>
+          </form>
+
         </a>
       {% endfor %}
     </div>

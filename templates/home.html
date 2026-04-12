@@ -1,11 +1,114 @@
-
 {% extends "base.html" %}
 
-{% block title %} Home {% endblock %}
+{% block title %} Adventurer Dashboard {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Welcome to Flask</h1>
-        <p>Your basic home page is running!</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+
+<div class="dashboard-wrapper">
+    <!-- Left Column: Today's Quests -->
+    <aside class="quest-column">
+    <div class="section-header">
+        <h2><span class="icon">📜</span> Today's Quests</h2>
     </div>
-{% endblock %}
+    <div class="scroll-container">
+        {% set active_found = false %}
+        {# Define current date string in YYYY-MM-DD format #}
+        {% set today_str = now.strftime('%Y-%m-%d') if now else "" %} 
+
+        {% for goal in goals %}
+            {% for quest in goal.quests %}
+                {# Only display if not completed AND the date matches today #}
+                {% if not quest.completed and quest.date == today_str %}
+                    {% set active_found = true %}
+                    <div class="quest-card card {% if quest.completed %}locked{% endif %}">
+                        <div class="quest-meta">{{ quest.theme }}</div>
+                        <h3>{{ quest.name }} {% if quest.completed %}✅{% endif %}</h3>
+                        
+                        <div class="quest-footer">
+                            <span class="xp-tag">+{{ quest.xp_reward }} XP</span>
+                            
+                            {% if quest.completed %}
+                                <span style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">LOCKED</span>
+                            {% else %}
+                                <a href="{{ url_for('study', goal_id=goal.db_id, quest_id=quest.db_id) }}" class="btn-sm">Start</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+        {% if not active_found %}
+            <p class="empty-text">No quests scheduled for today.</p>
+        {% endif %}
+    </div>
+</aside>
+
+    <!-- Center Column: Status Window -->
+    <main class="status-column">
+        <div class="character-sheet card">
+            <div class="char-header">
+                <div class="char-identity">
+                    <h1 class="highlight">{{ current_user.name }}</h1>
+                    <p class="rank-text">Level 1 Librarian</p>
+                </div>
+            </div>
+
+            <div class="status-bars">
+                <div class="status-item">
+                    <div class="status-label"><span>Rank</span> <span>#128</span></div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label"><span>Streak</span> <span>5 Days</span></div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-val">12</span>
+                    <span class="stat-lbl">Focus</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val">08</span>
+                    <span class="stat-lbl">Logic</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val">15</span>
+                    <span class="stat-lbl">Memory</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val">05</span>
+                    <span class="stat-lbl">Speed</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Column: Closest Goals -->
+    <aside class="goal-column">
+        <div class="section-header">
+            <h2><span class="icon">🏆</span> Closest Goals</h2>
+        </div>
+        <div class="scroll-container">
+            {% if goals %}
+                {% for goal in goals %}
+                <div class="goal-card card">
+                    <div class="goal-header">
+                        <span class="goal-title">{{ goal.exam_name }}</span>
+                        <span class="goal-perc">{{ goal.progress|int }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ goal.progress }}%;"></div>
+                    </div>
+                    <p class="goal-date">Due: {{ goal.exam_date }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-text">No active goals.</p>
+            {% endif %}
+            <a href="{{ url_for('plan') }}" class="btn-secondary">+ New Goal</a>
+        </div>
+    </aside>
+</div>
+{% endblock %}  
