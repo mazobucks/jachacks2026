@@ -37,6 +37,7 @@ client = genai.Client(
     http_options=HttpOptions(api_version="v1"))
 
 login_manager = LoginManager()
+login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 def hash_password(name, password):
@@ -165,6 +166,7 @@ def convert_mock_data_to_objects(mock_goals):
 
 
 @app.route('/')
+@login_required
 def home():
     goals= get_goals_for_user(current_user.user_id)
     return render_template("home.html", goals=goals, now=datetime.now())
@@ -191,7 +193,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("home"))
+    return redirect(url_for("login"))
 
 @app.route("/signup")
 def signup():
@@ -217,6 +219,7 @@ def signup_add():
         flash("Sign up has failed!")
         return redirect(url_for("signup")) 
 @app.route('/goals')
+@login_required
 def goals():
     """Display all goals with brief descriptions."""
     goals = get_goals_for_user(current_user.user_id)
@@ -300,6 +303,7 @@ def get_goals_for_user(user_id, goal_id=None):
     return goals
 
 @app.route('/quests')
+@login_required
 def quests():
     goals = get_goals_for_user(current_user.user_id)
     return render_template('quests.html', goals=goals, goal_id=None)
@@ -398,6 +402,7 @@ def new_quest(goal_id):
     return render_template('new_quest.html', form=form)
 
 @app.route('/study/<int:goal_id>/<int:quest_id>')
+@login_required
 def study(goal_id, quest_id):
     """Study session page for a specific quest."""
     # Reload or retrieve cached goals
