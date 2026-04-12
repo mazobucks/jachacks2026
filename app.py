@@ -165,6 +165,7 @@ def convert_mock_data_to_objects(mock_goals):
 
 
 @app.route('/')
+@login_required
 def home():
     goals= get_goals_for_user(current_user.user_id)
     return render_template("home.html", goals=goals, now=datetime.now())
@@ -191,7 +192,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("home"))
+    return redirect(url_for("login"))
 
 @app.route("/signup")
 def signup():
@@ -215,7 +216,12 @@ def signup_add():
         return redirect(url_for("login"))
     except sqlite3.DatabaseError:
         flash("Sign up has failed!")
-        return redirect(url_for("signup")) 
+        return redirect(url_for("signup"))
+
+@app.route("/leaderboard")
+def leaderboard():
+    return render_template("leaderboard.html")    
+
 @app.route('/goals')
 def goals():
     """Display all goals with brief descriptions."""
@@ -228,8 +234,7 @@ def delete_goal(goal_id):
     db = get_db()
     
     # Verify the goal belongs to the current user before deleting
-    goal = db.execute("SELECT id FROM Goals WHERE id = ? AND user_id = ?", 
-                      (goal_id, current_user.user_id)).fetchone()
+    goal = db.execute("SELECT id FROM Goals WHERE id = ? AND user_id = ?", (goal_id, current_user.user_id)).fetchone()
     
     if goal:
         # Delete associated quests first (if your DB isn't set to CASCADE)
