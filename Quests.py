@@ -73,6 +73,9 @@ class Quest:
 			f"Quest({self.name!r}, theme={self.theme!r}, study_time={self.study_time}h,"
 			f" date={self.date}, xp={self.xp_reward})"
 		)
+	
+	def quizInfoString(self):
+		return (f"name: {self.name}, theme: {self.theme}, description: {self.description}")
 
 	def increase_progress(self, increment: Union[int, float]) -> None:
 		"""Increase progress by a positive increment; cap at 100 and mark completed."""

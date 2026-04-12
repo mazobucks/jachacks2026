@@ -8,9 +8,24 @@ from Goal import Goal
 from Quests import Quest
 from mock_data import MOCK_GOALS
 from google import genai
+from Quiz import Quiz
 
 app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
+
+#TESTING AREA
+quest = Quest(
+            name="Study Algebra Basics",
+            theme="math",
+            study_time=2.5,
+            date="2026-05-01",
+            xp_reward=100,
+            stat_points={"intelligence": 5, "discipline": 2},
+            associated_goal=None,
+            description="Review core algebra concepts including equations and functions."
+        )
+test_quiz = Quiz(quest=quest)
+
 
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
