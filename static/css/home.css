@@ -1,0 +1,236 @@
+/* --- RPG Dashboard Layout --- */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg-dark: #0f172a;
+    --card-bg: #1e293b;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --xp-green: #10b981;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0;
+}
+
+.dashboard-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+    align-items: start;
+}
+
+/* --- Common Card Styles --- */
+.card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Center Column: Character Sheet --- */
+.character-sheet {
+    border: 2px solid var(--accent-blue);
+    position: relative;
+}
+
+.char-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.char-portrait {
+    font-size: 3rem;
+    background: #0f172a;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--accent-cyan);
+}
+
+.char-info h1 {
+    font-family: 'Syne', sans-serif;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.level-badge {
+    color: var(--accent-cyan);
+    font-family: 'DM Mono', monospace;
+    font-weight: bold;
+}
+
+/* --- Progress Bars --- */
+.progress-container {
+    margin: 20px 0;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+}
+
+.progress-bar {
+    height: 12px;
+    background: #0f172a;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    transition: width 0.5s ease-out;
+}
+
+/* --- Stats Grid --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.stat-box {
+    background: rgba(15, 23, 42, 0.5);
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    color: var(--accent-cyan);
+}
+
+.stat-lbl {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+/* --- Side Columns: Quests & Goals --- */
+.scroll-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Scrollbar Styling */
+.scroll-container::-webkit-scrollbar { width: 4px; }
+.scroll-container::-webkit-scrollbar-track { background: transparent; }
+.scroll-container::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 10px; }
+
+.quest-card, .goal-card {
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.quest-card:hover {
+    transform: translateX(5px);
+    border-color: var(--accent-blue);
+}
+
+.quest-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent-cyan);
+    margin-bottom: 8px;
+}
+
+.quest-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+}
+
+.quest-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.xp-tag {
+    color: var(--xp-green);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* --- Buttons --- */
+.btn-sm, .btn-secondary {
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-align: center;
+    transition: opacity 0.2s;
+}
+
+.btn-sm {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px dashed var(--text-dim);
+    color: var(--text-dim);
+    margin-top: 10px;
+}
+
+.btn-sm:hover, .btn-secondary:hover {
+    opacity: 0.8;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.goal-date {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 10px;
+}
+
+.empty-text {
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 20px;
+}
