@@ -36,6 +36,7 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"))
 
 login_manager = LoginManager()
+login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 def hash_password(name, password):
@@ -301,6 +302,7 @@ def get_leaderboard():
         return jsonify({"error": "Could not retrieve leaderboard"}), 500   
 
 @app.route('/goals')
+@login_required
 def goals():
     """Display all goals with brief descriptions."""
     goals = get_goals_for_user(current_user.user_id)
@@ -383,6 +385,7 @@ def get_goals_for_user(user_id, goal_id=None):
     return goals
 
 @app.route('/quests')
+@login_required
 def quests():
     goals = get_goals_for_user(current_user.user_id)
     return render_template('quests.html', goals=goals, goal_id=None)
@@ -481,6 +484,7 @@ def new_quest(goal_id):
     return render_template('new_quest.html', form=form)
 
 @app.route('/study/<int:goal_id>/<int:quest_id>')
+@login_required
 def study(goal_id, quest_id):
     """Study session page for a specific quest."""
     # Reload or retrieve cached goals
