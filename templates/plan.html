@@ -1,5 +1,199 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %} Plan {% endblock %}
 
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  .plan-wrapper {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 4rem 2rem;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .plan-header {
+    text-align: center;
+  }
+
+  .plan-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.5rem;
+  }
+
+  .plan-header p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .plan-actions {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .plan-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 2rem 2.5rem;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    width: 260px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .plan-btn:hover {
+    transform: translateY(-6px);
+  }
+
+  .plan-btn-goal {
+    background: #0f172a;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.25);
+  }
+
+  .plan-btn-goal:hover {
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+  }
+
+  .plan-btn-quest {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+  }
+
+  .plan-btn-quest:hover {
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    border-color: #cbd5e1;
+  }
+
+  .btn-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .btn-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .plan-btn-goal .btn-label {
+    color: #64748b;
+  }
+
+  .plan-btn-quest .btn-label {
+    color: #94a3b8;
+  }
+
+  .btn-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .plan-btn-goal .btn-title {
+    color: #ffffff;
+  }
+
+  .plan-btn-quest .btn-title {
+    color: #0f172a;
+  }
+
+  .btn-desc {
+    font-size: 0.82rem;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.5;
+  }
+
+  .plan-btn-goal .btn-desc {
+    color: #475569;
+  }
+
+  .plan-btn-quest .btn-desc {
+    color: #64748b;
+  }
+
+  .btn-arrow {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.75rem;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+  }
+
+  .plan-btn-goal .btn-arrow {
+    color: #334155;
+  }
+
+  .plan-btn-quest .btn-arrow {
+    color: #cbd5e1;
+  }
+
+  .plan-btn:hover .btn-arrow {
+    transform: translate(4px, -4px);
+  }
+
+  .btn-glow {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+</style>
+
+<div class="plan-wrapper">
+  <div class="plan-header">
+    <h1>Plan</h1>
+    <p>What would you like to add?</p>
+  </div>
+
+  <div class="plan-actions">
+
+    <!-- Add New Goal -->
+    <a href="{{ url_for('new_goal') }}" class="plan-btn plan-btn-goal">
+      <div class="btn-glow"></div>
+      <div class="btn-label">New</div>
+      <div class="btn-icon">🎯</div>
+      <div class="btn-title">Add a Goal</div>
+      <div class="btn-desc">Define a new exam<br>to work towards.</div>
+      <div class="btn-arrow">↗</div>
+    </a>
+
+    <!-- Add New Quest -->
+    <a href="{{ url_for('new_quest_select') }}" class="plan-btn plan-btn-quest">
+      <div class="btn-label">New</div>
+      <div class="btn-icon">⚔️</div>
+      <div class="btn-title">Add a Quest</div>
+      <div class="btn-desc">Create a study task<br>under an existing goal.</div>
+      <div class="btn-arrow">↗</div>
+    </a>
+
+  </div>
+</div>
 {% endblock %}

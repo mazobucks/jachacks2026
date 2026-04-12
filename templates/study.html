@@ -236,8 +236,14 @@
         Do you think you understand the material?
       </div>
       <div class="quiz-buttons">
-        <button class="btn-quiz btn-pass" onclick="submitQuiz('pass')">Pass Quiz ✓</button>
-        <button class="btn-quiz btn-fail" onclick="submitQuiz('fail')">Fail Quiz ✗</button>
+        <form method="POST" action="{{ url_for('quiz_result', goal_id=goal_id, quest_id=quest_id, result='pass') }}">
+          <input type="hidden" name="time_spent_seconds" id="timeSpentInput" value="0">
+          <button type="submit" class="btn-quiz btn-pass">Pass Quiz ✓</button>
+        </form>
+        <form method="POST" action="{{ url_for('quiz_result', goal_id=goal_id, quest_id=quest_id, result='fail') }}">
+          <input type="hidden" name="time_spent_seconds" id="timeSpentInput2" value="0">
+          <button type="submit" class="btn-quiz btn-fail">Fail Quiz ✗</button>
+        </form>
       </div>
     </div>
   </div>
@@ -295,31 +301,20 @@
 
     function cancelStudy() {
       if (confirm('Are you sure you want to cancel this study session?')) {
-        window.location.href = '{{ url_for("quest_detail", goal_id=goal_id) }}';
+        window.location.href = '{{ url_for("goal_detail", goal_id=goal_id) }}';
       }
     }
 
     function showQuiz() {
+      const timeSpentHours = ({{ timer_seconds }} - timeRemaining) / 3600;
+      document.getElementById('timeSpentInput').value = timeSpentHours;
+      document.getElementById('timeSpentInput2').value = timeSpentHours;
       document.getElementById('quizSection').classList.add('show');
       document.querySelectorAll('.study-controls').forEach(el => el.style.display = 'none');
+      
     }
 
-    function submitQuiz(result) {
-      fetch('/api/quiz/{{ goal_id }}/{{ quest_idx }}/' + result, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert(data.message);
-          window.location.href = '{{ url_for("quest_detail", goal_id=goal_id) }}';
-        } else {
-          alert('Error: ' + data.message);
-        }
-      })
-      .catch(err => alert('Failed: ' + err));
-    }
+
 
     // Start the timer when page loads
     window.addEventListener('load', startTimer);

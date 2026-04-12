@@ -7,7 +7,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, g, 
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from Goal import Goal
 from Quests import Quest
-from mock_data import MOCK_GOALS
+from forms import GoalForm, QuestForm
+
 
 app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
@@ -37,6 +38,34 @@ if not database_exists:
     db.execute(
         "INSERT INTO Users (name, grade, password) VALUES (?, ?, ?)",
         ("Test", "A", hash_password("Test", "1234")),
+    )
+    db.execute(
+        "INSERT INTO Goals (exam_name, exam_subject, exam_date, hours_willing, themes, progress, completed, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Linux System Administrator Certification", "Linux Administration", "2026-06-15", 25.0, "Shell & Scripting,Filesystem,Networking,Security,Services", 0.0, 0, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Intro to Shell and Navigation", "Shell & Scripting", 3.0, 0.0, "2026-04-20", 30, '{"focus": 1, "speed": 1}', "Basic shell commands, file navigation, wildcards, and man pages.", 100.0, 1, 0, 1, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Bash Scripting Fundamentals", "Shell & Scripting", 5.0, 0.0, "2026-04-22", 60, '{"logic": 2, "focus": 1}', "Variables, control flow, functions, and small automation scripts.", 40.0, 0, 0, 1, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Filesystem Hierarchy & Permissions", "Filesystem", 4.0, 0.0, "2026-04-25", 50, '{"memory": 1, "focus": 1}', "FHS layout, ownership, chmod, chown, ACLs, and special permissions.", 20.0, 0, 0, 1, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Network Configuration Basics", "Networking", 6.0, 0.0, "2026-05-01", 80, '{"networking": 3, "logic": 1}', "IP addressing, routing, DNS basics, systemd-networkd and net-tools.", 0.0, 0, 0, 1, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("Securing SSH and Services", "Security", 4.0, 0.0, "2026-05-03", 70, '{"security": 3, "focus": 1}', "Harden SSH, keys, sshd_config, firewall basics (ufw/iptables), and service hardening.", 0.0, 0, 0, 1, 1)
+    )
+    db.execute(
+        "INSERT INTO Quests (name, theme, study_time, time_spent, date, xp_reward, stat_points, description, progress, completed, failed, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("System Services and Logging", "Services", 3.0, 0.0, "2026-05-07", 40, '{"ops": 2}', "systemd units, journalctl, service management, timer units.", 0.0, 0, 0, 1, 1)
     )
     db.commit()
     db.close()
@@ -207,8 +236,8 @@ def quests():
     return render_template('quests.html', goals=goals, goal_id=None)
 
 
-@app.route('/quests/<int:goal_id>')
-def quest_detail(goal_id):
+@app.route('/goals/<int:goal_id>')
+def goal_detail(goal_id):
     """Display quests for a specific goal."""
     goals = get_goals_for_user(current_user.user_id, goal_id)
     if not goals:
@@ -222,6 +251,64 @@ def page_not_found(error):
     """Handle 404 errors."""
     return render_template('404.html'), 404
 
+@app.route('/plan')
+@login_required
+def plan():
+    return render_template('plan.html')
+
+
+
+
+@app.route('/plan/new-goal', methods=['GET', 'POST'])
+@login_required
+def new_goal():
+    form = GoalForm()
+    if form.validate_on_submit():
+        db = get_db()
+        db.execute(
+            "INSERT INTO Goals (exam_name, exam_subject, exam_date, hours_willing, themes, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (form.exam_name.data, form.exam_subject.data, form.exam_date.data.isoformat(), 
+             form.hours_willing.data, form.themes.data, current_user.user_id)
+        )
+        db.commit()
+        flash("Goal added successfully!")
+        return redirect(url_for('goals'))
+    return render_template('new_goal.html', form=form)
+
+@app.route('/plan/new-quest-select')
+@login_required
+def new_quest_select():
+    """Step 1: User selects which goal to add a quest to."""
+    goals = get_goals_for_user(current_user.user_id)
+    return render_template('new_quest_select.html', goals=goals)
+
+@app.route('/plan/new-quest/<int:goal_id>', methods=['GET', 'POST'])
+@login_required
+def new_quest(goal_id):
+    """Step 2: User fills in quest details for the specific goal."""
+    db = get_db()
+    goal_row = db.execute("SELECT themes FROM Goals WHERE id = ? AND user_id = ?", 
+                          [goal_id, current_user.user_id]).fetchone()
+    
+    if not goal_row:
+        return render_template('404.html'), 404
+
+    form = QuestForm()
+    # Dynamically populate dropdowns
+    form.goal_id.choices = [(goal_id, "Selected Goal")]
+    form.theme.choices = [(t.strip(), t.strip()) for t in goal_row[0].split(',')]
+
+    if form.validate_on_submit():
+        db.execute(
+            "INSERT INTO Quests (name, theme, study_time, date, xp_reward, description, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (form.name.data, form.theme.data, form.study_time.data, form.date.data.isoformat(),
+             form.xp_reward.data, form.description.data, goal_id, current_user.user_id)
+        )
+        db.commit()
+        flash("Quest added!")
+        return redirect(url_for('goal_detail', goal_id=goal_id))
+    
+    return render_template('new_quest.html', form=form)
 
 @app.route('/study/<int:goal_id>/<int:quest_id>')
 def study(goal_id, quest_id):
@@ -241,68 +328,51 @@ def study(goal_id, quest_id):
     # Convert study_time (hours) to seconds for the timer
     timer_seconds = int(quest.study_time * 3600)
     
-    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_idx=quest_id, timer_seconds=timer_seconds)
+    return render_template('study.html', goal=goal, quest=quest, goal_id=goal_id, quest_id=quest_id, timer_seconds=timer_seconds)
 
 
-@app.route('/api/study/<int:goal_id>/<int:quest_idx>', methods=['POST'])
-def save_study_time(goal_id, quest_idx):
-    """Save time spent studying."""
-    if 'goals' not in _session_goals:
-        return jsonify({'success': False, 'message': 'No study session'}), 400
-    
-    goals = _session_goals['goals']
-    
-    if goal_id < 0 or goal_id >= len(goals) or quest_idx < 0 or quest_idx >= len(goals[goal_id].quests):
-        return jsonify({'success': False, 'message': 'Invalid goal or quest'}), 400
-    
-    try:
-        data = request.get_json()
-        time_spent = float(data.get('time_spent', 0))
-        
-        if time_spent < 0:
-            return jsonify({'success': False, 'message': 'Invalid time'}), 400
-        
-        quest = goals[goal_id].quests[quest_idx]
-        quest.update_time_spent(time_spent)
-        
-        # Recalc goal progress
-        goals[goal_id].recalc_progress()
-        
-        return jsonify({'success': True, 'message': f'Saved {time_spent:.2f} hours', 'progress': quest.progress})
-    except (ValueError, TypeError) as e:
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 400
+@app.route('/study/<int:goal_id>/<int:quest_id>/<result>', methods=['POST'])
+@login_required
+def quiz_result(goal_id, quest_id, result):
+    if result not in ('pass', 'fail'):
+        return render_template('404.html'), 404
 
+    # Save time spent
+    time_spent_hours = float(request.form.get('time_spent_seconds', 0))
+    row = get_db().execute(
+        "SELECT study_time FROM Quests WHERE id = ? AND user_id = ?",
+        [quest_id, current_user.user_id]
+    ).fetchone()
+    if not row:
+        return render_template('404.html'), 404
 
-@app.route('/api/quiz/<int:goal_id>/<int:quest_idx>/<result>', methods=['POST'])
-def quiz_result(goal_id, quest_idx, result):
-    """Handle quiz pass/fail result."""
-    if 'goals' not in _session_goals:
-        return {'success': False, 'message': 'No study session'}, 400
-    
-    goals = _session_goals['goals']
-    
-    if goal_id < 0 or goal_id >= len(goals) or quest_idx < 0 or quest_idx >= len(goals[goal_id].quests):
-        return {'success': False, 'message': 'Invalid goal or quest'}, 400
-    
-    quest = goals[goal_id].quests[quest_idx]
-    
-    if result == 'pass':
-        quest.completed = True
-        quest.failed = False
-        # Points would be awarded here
-        message = f"Quest passed! You earned {quest.xp_reward} XP"
-    elif result == 'fail':
-        quest.failed = True
-        quest.completed = False
-        message = "Quiz failed. Try again later."
-    else:
-        return {'success': False, 'message': 'Invalid result'}, 400
-    
-    # Recalc goal progress
-    goals[goal_id].recalc_progress()
-    
-    return {'success': True, 'message': message, 'quest_completed': quest.completed, 'quest_failed': quest.failed}
+    new_progress = min(100.0, (time_spent_hours / row[0]) * 100.0)
+    completed = 1 if result == 'pass' else 0
+    failed    = 1 if result == 'fail' else 0
 
+    # Update quest
+    get_db().execute(
+        "UPDATE Quests SET time_spent = ?, progress = ?, completed = ?, failed = ? WHERE id = ? AND user_id = ?",
+        [time_spent_hours, new_progress, completed, failed, quest_id, current_user.user_id]
+    )
+
+    # Recalc and update goal progress
+    quest_rows = get_db().execute(
+        "SELECT completed FROM Quests WHERE goal_id = ? AND user_id = ?",
+        [goal_id, current_user.user_id]
+    ).fetchall()
+    total = len(quest_rows)
+    done = sum(1 for r in quest_rows if r[0])
+    goal_progress = (done / total * 100.0) if total else 0.0
+
+    get_db().execute(
+        "UPDATE Goals SET progress = ?, completed = ? WHERE id = ? AND user_id = ?",
+        [goal_progress, 1 if goal_progress >= 100.0 else 0, goal_id, current_user.user_id]
+    )
+    get_db().commit()
+
+    flash(f"Quest {'passed' if result == 'pass' else 'failed'}!")
+    return redirect(url_for('goal_detail', goal_id=goal_id))
 
 if __name__ == '__main__':
     app.run(debug=True)

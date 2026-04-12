@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="plan-wrapper">
+    <div class="plan-header">
+        <h1>Select a Goal</h1>
+        <p>Which exam are you studying for?</p>
+    </div>
+    <div class="plan-actions">
+        {% for goal in goals %}
+        <a href="{{ url_for('new_quest', goal_id=goal.db_id) }}" class="plan-btn plan-btn-quest">
+            <div class="btn-title">{{ goal.exam_name }}</div>
+            <div class="btn-desc">{{ goal.exam_subject }}</div>
+            <div class="btn-arrow">→</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
