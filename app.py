@@ -430,7 +430,8 @@ def new_goal():
             exam_subject=form.exam_subject.data,
             exam_date=form.exam_date.data.isoformat(),
             hours_willing=form.hours_willing.data,
-            themes_str=form.themes.data
+            themes_str=form.themes.data,
+            files = request.files.getlist('study_documents')
         )
         
         if result:
@@ -544,18 +545,24 @@ def quiz_result(goal_id, quest_id, result):
     flash(f"Quest {'passed' if result == 'pass' else 'failed'}!")
     return redirect(url_for('goal_detail', goal_id=goal_id))
 
-def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, themes_str):
+def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, themes_str, files):
     """Generate quests and save to database."""
     try:
         db = get_db()
         themes = [t.strip() for t in themes_str.split(',')]
-        
+        extracted_texts = []
+
+        for file in files:
+            if file and file.filename.endswith('.txt'):
+                extracted_texts.append(file.read().decode('utf-8'))
+            # Note: For PDFs or Images, I'll need a library like PyMuPDF (fitz) 
         quests = QuestGenerator.generate_quests(
             goal_name=exam_name,
             exam_subject=exam_subject,
             exam_date=exam_date,
             hours_willing=hours_willing,
             themes=themes,
+            documents_contents=extracted_texts
         )
         
         for quest in quests:
