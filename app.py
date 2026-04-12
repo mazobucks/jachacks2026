@@ -12,6 +12,7 @@ from google import genai
 from Quiz import Quiz
 from google.genai.types import HttpOptions
 from QuestGenerator import QuestGenerator
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
@@ -155,7 +156,7 @@ def convert_mock_data_to_objects(mock_goals):
 @app.route('/')
 def home():
     goals= get_goals_for_user(current_user.user_id)
-    return render_template("home.html", goals=goals)
+    return render_template("home.html", goals=goals, now=datetime.now())
 
 @app.route("/login")
 def login_form():

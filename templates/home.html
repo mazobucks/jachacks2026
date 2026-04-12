@@ -8,31 +8,42 @@
 <div class="dashboard-wrapper">
     <!-- Left Column: Today's Quests -->
     <aside class="quest-column">
-        <div class="section-header">
-            <h2><span class="icon">📜</span> Today's Quests</h2>
-        </div>
-        <div class="scroll-container">
-            {% set active_found = false %}
-            {% for goal in goals %}
-                {% for quest in goal.quests %}
-                    {% if not quest.completed %}
+    <div class="section-header">
+        <h2><span class="icon">📜</span> Today's Quests</h2>
+    </div>
+    <div class="scroll-container">
+        {% set active_found = false %}
+        {# Define current date string in YYYY-MM-DD format #}
+        {% set today_str = now.strftime('%Y-%m-%d') if now else "" %} 
+
+        {% for goal in goals %}
+            {% for quest in goal.quests %}
+                {# Only display if not completed AND the date matches today #}
+                {% if not quest.completed and quest.date == today_str %}
                     {% set active_found = true %}
-                    <div class="quest-card card">
+                    <div class="quest-card card {% if quest.completed %}locked{% endif %}">
                         <div class="quest-meta">{{ quest.theme }}</div>
-                        <h3>{{ quest.name }}</h3>
+                        <h3>{{ quest.name }} {% if quest.completed %}✅{% endif %}</h3>
+                        
                         <div class="quest-footer">
                             <span class="xp-tag">+{{ quest.xp_reward }} XP</span>
-                            <a href="{{ url_for('study', goal_id=goal.db_id, quest_id=quest.db_id) }}" class="btn-sm">Start</a>
+                            
+                            {% if quest.completed %}
+                                <span style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">LOCKED</span>
+                            {% else %}
+                                <a href="{{ url_for('study', goal_id=goal.db_id, quest_id=quest.db_id) }}" class="btn-sm">Start</a>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
-                {% endfor %}
+                {% endif %}
             {% endfor %}
-            {% if not active_found %}
-                <p class="empty-text">No quests for today.</p>
-            {% endif %}
-        </div>
-    </aside>
+        {% endfor %}
+
+        {% if not active_found %}
+            <p class="empty-text">No quests scheduled for today.</p>
+        {% endif %}
+    </div>
+</aside>
 
     <!-- Center Column: Status Window -->
     <main class="status-column">
