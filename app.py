@@ -27,8 +27,8 @@ quest = Quest(
             associated_goal=None,
             description="Review core algebra concepts including equations and functions."
         )
-test_quiz = Quiz(quest=quest)
-print(test_quiz)
+#test_quiz = Quiz(quest=quest)
+#print(test_quiz)
 
 
 client = genai.Client(
@@ -46,7 +46,7 @@ database_exists = os.path.isfile(path)
 db = sqlite3.connect(path)
 if not database_exists:
     db.execute(
-        "CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) UNIQUE, grade VARCHAR(255), password VARCHAR(255))"
+        "CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) UNIQUE, grade VARCHAR(255), password VARCHAR(255), program VARCHAR(255))"
     )
     db.execute(
         "CREATE TABLE Stats (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(255), points INTEGER NOT NULL CHECK(points >= 0 AND points <= 100), user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES Users(id))"
@@ -58,8 +58,8 @@ if not database_exists:
         "CREATE TABLE Quests (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) NOT NULL, theme VARCHAR(255) NOT NULL, study_time REAL NOT NULL, time_spent REAL DEFAULT 0.0, date VARCHAR(255) NOT NULL, xp_reward INTEGER DEFAULT 0, stat_points TEXT, description TEXT DEFAULT '', progress REAL DEFAULT 0.0 CHECK(progress >= 0.0 AND progress <= 100.0), completed BOOLEAN DEFAULT 0, failed BOOLEAN DEFAULT 0, goal_id INTEGER NOT NULL, user_id INTEGER NOT NULL, FOREIGN KEY (goal_id) REFERENCES Goals(id), FOREIGN KEY (user_id) REFERENCES Users(id))"
     )
     db.execute(
-        "INSERT INTO Users (name, grade, password) VALUES (?, ?, ?)",
-        ("Test", "A", hash_password("Test", "1234")),
+        "INSERT INTO Users (name, grade, password, program) VALUES (?, ?, ?, ?)",
+        ("Test", "A", hash_password("Test", "1234"), "Computer Science"),
     )
     db.execute(
         "INSERT INTO Goals (exam_name, exam_subject, exam_date, hours_willing, themes, progress, completed, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -176,7 +176,9 @@ def login():
     name = request.form["name"]
     password = request.form["password"]
     record = get_db().execute("SELECT id, password FROM Users WHERE name = ? LIMIT 1", [name]).fetchone()
+    print("Record: ",record)
     if not record or not werkzeug.security.check_password_hash(record[1], name + password):
+        print("Record: ",record)
         flash("Login info invalid!!!")
         return redirect(url_for("login_form"))
     user = User(record[0], name, record[1])
@@ -191,8 +193,27 @@ def logout():
 
 @app.route("/signup")
 def signup():
-    return render_template("")
+    return render_template("signup.html")
 
+@app.route("/signup", methods=["POST"])
+def signup_add():
+    name = request.form["name"]
+    password = request.form["password"]
+    grade = request.form["grade"]
+    program = request.form["program"]
+    try:
+        get_db().execute(
+            "INSERT INTO Users (name, grade, password, program) VALUES (?, ?, ?, ?)",
+            (name, grade, hash_password(name, password), program),
+        )
+        print("AAA")
+        get_db().commit()
+        get_db().close()
+        print("BBB")
+        return redirect(url_for("login"))
+    except sqlite3.DatabaseError:
+        flash("Sign up has failed!")
+        return redirect(url_for("signup")) 
 @app.route('/goals')
 def goals():
     """Display all goals with brief descriptions."""
@@ -436,8 +457,8 @@ def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, 
             db.execute(
                 "INSERT INTO Quests (name, theme, study_time, date, xp_reward, stat_points, description, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (quest.name, quest.theme, quest.study_time, quest.date, quest.xp_reward, 
-                 json.dumps(quest.stat_points) if quest.stat_points else "{}", 
-                 quest.description, goal_id, current_user.user_id)
+                json.dumps(quest.stat_points) if quest.stat_points else "{}", 
+                quest.description, goal_id, current_user.user_id)
             )
         db.commit()
         return quests
