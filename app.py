@@ -10,6 +10,7 @@ from Quests import Quest
 from forms import GoalForm, QuestForm
 from google import genai
 from Quiz import Quiz
+from google.genai.types import HttpOptions
 from QuestGenerator import QuestGenerator
 
 app = Flask(__name__)
@@ -19,7 +20,9 @@ app.secret_key = "HELLO-ashvdasuvd"
 
 
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    http_options=HttpOptions(api_version="v1"))
 
 login_manager = LoginManager()
 login_manager.init_app(app)
