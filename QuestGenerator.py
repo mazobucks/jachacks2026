@@ -19,6 +19,7 @@ class QuestGenerator:
         hours_willing: float,
         themes: List[str],
         days_before_exam: int = 21,  # Increased window for better distribution
+        documents_contents=None
     ) -> List[Quest]:
         """
         Generate a list of Quest objects using structured JSON output.
@@ -27,7 +28,10 @@ class QuestGenerator:
             raise ValueError("At least one theme must be provided")
         if hours_willing <= 0:
             raise ValueError("hours_willing must be positive")
-        
+        notes_context = ""
+        if documents_contents:
+            notes_context = "\nEXTRACTED NOTES FROM USER UPLOADS:\n" + "\n".join(documents_contents)
+
         try:
             exam_dt = datetime.fromisoformat(exam_date)
         except ValueError:
@@ -46,6 +50,7 @@ class QuestGenerator:
             hours_willing=hours_willing,
             themes=themes,
             earliest_date=earliest_date.strftime("%Y-%m-%d"),
+            notes_context=notes_context
         )
 
         try:
@@ -87,7 +92,7 @@ class QuestGenerator:
             raise ValueError(f"Failed to generate study plan: {e}")
 
     @staticmethod
-    def _build_prompt(goal_name, exam_subject, exam_date, hours_willing, themes, earliest_date):
+    def _build_prompt(goal_name, exam_subject, exam_date, hours_willing, themes, earliest_date, notes_context):
         themes_str = ", ".join(themes)
         return f"""
         Act as an expert Academic Coach. Design a high-impact study curriculum.
@@ -98,6 +103,8 @@ class QuestGenerator:
         - Total Budget: {hours_willing} hours
         - Core Topics: {themes_str}
         - Start Date: {earliest_date}
+        CORE TOPICS: {themes}, 
+        {notes_context}
 
         STRATEGY:
         1. Distribution: Spread the {hours_willing} hours across the time remaining.
@@ -105,7 +112,8 @@ class QuestGenerator:
         3. Variety: Ensure every theme ({themes_str}) is addressed at least once.
         4. Engagement: Give quests "RPG-style" names (e.g., "The Foundations of {themes[0]}", "Mastering the {themes[0]} Trial").
         5. Gamification: Harder quests (longer hours) should have higher xp_reward (up to 200).
-
+        6. Align quests with the SPECIFIC content found in the provided notes.
+        7. If the notes mention a specific formula or sub-topic, create a quest for it.
         OUTPUT FORMAT (JSON):
         {{
             "quests": [
