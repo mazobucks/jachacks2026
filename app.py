@@ -154,7 +154,8 @@ def convert_mock_data_to_objects(mock_goals):
 
 @app.route('/')
 def home():
-    return render_template("home.html")
+    goals= get_goals_for_user(current_user.user_id)
+    return render_template("home.html", goals=goals)
 
 @app.route("/login")
 def login_form():
