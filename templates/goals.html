@@ -92,7 +92,7 @@
   {% if goals %}
     <div class="goals-container">
       {% for goal in goals %}
-        <a href="{{ url_for('quest_detail', goal_id=loop.index0) }}" class="goal-card">
+        <a href="{{ url_for('goal_detail', goal_id=goal.db_id) }}" class="goal-card">
           <div>
             <div class="goal-card-title">{{ goal.exam_name }}</div>
             <div class="goal-card-subject">{{ goal.exam_subject }}</div>

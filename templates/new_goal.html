@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* Reusing styles from plan.html */
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  .form-container {
+    background: #f8fafc;
+    padding: 3rem;
+    border-radius: 24px;
+    border: 2px solid #e2e8f0;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .form-control {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #0f172a;
+  }
+
+  .submit-row {
+      margin-top: 1rem;
+  }
+</style>
+
+<div class="plan-wrapper">
+    <h1>Create New Goal</h1>
+    <form method="POST" style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px;">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.exam_name.label }}<br>
+            {{ form.exam_name(style="width:100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;") }}
+        </div>
+        <div>
+            {{ form.exam_subject.label }}<br>
+            {{ form.exam_subject(style="width:100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;") }}
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <div style="flex: 1;">
+                {{ form.exam_date.label }}<br>
+                {{ form.exam_date(type="date", style="width:100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;") }}
+            </div>
+            <div style="flex: 1;">
+                {{ form.hours_willing.label }}<br>
+                {{ form.hours_willing(style="width:100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;") }}
+            </div>
+        </div>
+        <div>
+            {{ form.themes.label }} (Comma separated)<br>
+            {{ form.themes(placeholder="Math, Logic, Science", style="width:100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;") }}
+        </div>
+        <button type="submit" class="plan-btn plan-btn-goal" style="width: 100%; margin-top: 1rem;">Create Goal</button>
+    </form>
+</div>
+{% endblock %}
