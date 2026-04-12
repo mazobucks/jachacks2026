@@ -33,8 +33,7 @@ quest = Quest(
 
 
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY"),
-    http_options=HttpOptions(api_version="v1"))
+    api_key=os.getenv("GEMINI_API_KEY"))
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -205,15 +204,57 @@ def signup_add():
     password = request.form["password"]
     grade = request.form["grade"]
     program = request.form["program"]
+    
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents = (
+            f"Using the program: {program}. "
+            "Give exactly 3 core skill stats for this program. "
+            'Return only JSON as {"stats": ["...", "...", "..."]}.'
+        )
+    )
+        
     try:
-        get_db().execute(
+        skillsDic = json.loads(response.text)
+        stats = skillsDic["stats"]
+    except json.JSONDecodeError:
+        print("Something went wrong with generating your profile")
+    
+    try:
+        cursor = get_db().execute(
             "INSERT INTO Users (name, grade, password, program) VALUES (?, ?, ?, ?)",
             (name, grade, hash_password(name, password), program),
         )
-        print("AAA")
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            ("Languages", 0, cursor.lastrowid)
+        )
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            ("Humanities", 0, cursor.lastrowid)
+        )
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            ("P.E.", 0, cursor.lastrowid)
+        )
+        
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            (stats[0], 0, cursor.lastrowid)
+        )
+        
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            (stats[1], 0, cursor.lastrowid)
+        )
+        
+        get_db().execute(
+            "INSERT INTO Stats (title, points, user_id) VALUES (?,?,?)",
+            (stats[2], 0, cursor.lastrowid)
+        )
+        
         get_db().commit()
         get_db().close()
-        print("BBB")
         return redirect(url_for("login"))
     except sqlite3.DatabaseError:
         flash("Sign up has failed!")
@@ -221,7 +262,44 @@ def signup_add():
 
 @app.route("/leaderboard")
 def leaderboard():
-    return render_template("leaderboard.html")    
+    return render_template("leaderboard.html")
+
+@app.route("/api/leaderboard", methods=["GET"])
+def get_leaderboard():
+    db = get_db()
+    
+    # We join Users and Stats on the user_id
+    # We use SUM(points) and sort descending (DESC)
+    query = """
+        SELECT 
+            Users.name, 
+            Users.program, 
+            SUM(Stats.points) as total_points
+        FROM Users
+        LEFT JOIN Stats ON Users.id = Stats.user_id
+        GROUP BY Users.id
+        ORDER BY total_points DESC
+    """
+    
+    try:
+        cursor = db.execute(query)
+        # Fetchall returns a list of row objects
+        rows = cursor.fetchall()
+        
+        # Convert rows into a list of dictionaries for JSON
+        leaderboard_data = []
+        for row in rows:
+            leaderboard_data.append({
+                "name": row["name"],
+                "program": row["program"],
+                "total_points": row["total_points"] if row["total_points"] else 0
+            })
+            
+        return jsonify(leaderboard_data), 200
+        
+    except Exception as e:
+        print(f"Error fetching leaderboard: {e}")
+        return jsonify({"error": "Could not retrieve leaderboard"}), 500   
 
 @app.route('/goals')
 @login_required
