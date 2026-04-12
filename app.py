@@ -168,7 +168,8 @@ def convert_mock_data_to_objects(mock_goals):
 @login_required
 def home():
     goals= get_goals_for_user(current_user.user_id)
-    return render_template("home.html", goals=goals, now=datetime.now())
+    userInfo= getUser(current_user.user_id)
+    return render_template("home.html", goals=goals, now=datetime.now(), userInfo=userInfo)
 
 @app.route("/login")
 def login_form():
@@ -576,6 +577,17 @@ def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, 
         return quests
     except Exception as e:
         return None
+    
+def getUser(id):
+    record = get_db().execute("SELECT id, name, password, grade, program FROM Users WHERE id = ? LIMIT 1", [id]).fetchone()
+    if not record:
+        return None
+    
+    rows = get_db().execute(""" SELECT title, points FROM Stats WHERE user_id = ? """, [id]).fetchall()
+
+    stats = [{"title": row[0], "points": row[1]} for row in rows]
+    
+    return { "name":record[1], "grade":record[3], "program":record[4], "stats":stats }
 
 if __name__ == '__main__':
     app.run(debug=True)
