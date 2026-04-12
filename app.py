@@ -8,10 +8,13 @@ from flask_login import LoginManager, UserMixin, login_required, login_user, log
 from Goal import Goal
 from Quests import Quest
 from forms import GoalForm, QuestForm
-
+from google import genai
 
 app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
+
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 login_manager = LoginManager()
 login_manager.init_app(app)
