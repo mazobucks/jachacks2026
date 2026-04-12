@@ -16,17 +16,6 @@ app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
 
 #TESTING AREA
-quest = Quest(
-            name="Study Algebra Basics",
-            theme="math",
-            study_time=2.5,
-            date="2026-05-01",
-            xp_reward=100,
-            stat_points={"intelligence": 5, "discipline": 2},
-            associated_goal=None,
-            description="Review core algebra concepts including equations and functions."
-        )
-test_quiz = Quiz(quest=quest)
 
 
 
@@ -185,6 +174,10 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+
+@app.route("/signup")
+def signup():
+    return render_template("")
 
 @app.route('/goals')
 def goals():
