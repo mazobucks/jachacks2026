@@ -10,6 +10,7 @@ from Quests import Quest
 from forms import GoalForm, QuestForm
 from google import genai
 from Quiz import Quiz
+from QuestGenerator import QuestGenerator
 
 app = Flask(__name__)
 app.secret_key = "HELLO-ashvdasuvd"
@@ -283,14 +284,32 @@ def new_goal():
     form = GoalForm()
     if form.validate_on_submit():
         db = get_db()
-        db.execute(
+        cursor = db.execute(
             "INSERT INTO Goals (exam_name, exam_subject, exam_date, hours_willing, themes, user_id) VALUES (?, ?, ?, ?, ?, ?)",
             (form.exam_name.data, form.exam_subject.data, form.exam_date.data.isoformat(), 
              form.hours_willing.data, form.themes.data, current_user.user_id)
         )
+        goal_id = cursor.lastrowid
         db.commit()
-        flash("Goal added successfully!")
-        return redirect(url_for('goals'))
+        
+        result = generate_quests(
+            goal_id=goal_id,
+            exam_name=form.exam_name.data,
+            exam_subject=form.exam_subject.data,
+            exam_date=form.exam_date.data.isoformat(),
+            hours_willing=form.hours_willing.data,
+            themes_str=form.themes.data
+        )
+        
+        if result:
+            flash("Goal created with auto-generated quests!")
+            return redirect(url_for('goals'))
+        else:
+            db.execute("DELETE FROM Goals WHERE id = ?", [goal_id])
+            db.commit()
+            flash("Error generating quests")
+            return render_template('new_goal.html', form=form)
+    
     return render_template('new_goal.html', form=form)
 
 @app.route('/plan/new-quest-select')
@@ -391,6 +410,32 @@ def quiz_result(goal_id, quest_id, result):
 
     flash(f"Quest {'passed' if result == 'pass' else 'failed'}!")
     return redirect(url_for('goal_detail', goal_id=goal_id))
+
+def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, themes_str):
+    """Generate quests and save to database."""
+    try:
+        db = get_db()
+        themes = [t.strip() for t in themes_str.split(',')]
+        
+        quests = QuestGenerator.generate_quests(
+            goal_name=exam_name,
+            exam_subject=exam_subject,
+            exam_date=exam_date,
+            hours_willing=hours_willing,
+            themes=themes,
+        )
+        
+        for quest in quests:
+            db.execute(
+                "INSERT INTO Quests (name, theme, study_time, date, xp_reward, stat_points, description, goal_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (quest.name, quest.theme, quest.study_time, quest.date, quest.xp_reward, 
+                 json.dumps(quest.stat_points) if quest.stat_points else "{}", 
+                 quest.description, goal_id, current_user.user_id)
+            )
+        db.commit()
+        return quests
+    except Exception as e:
+        return None
 
 if __name__ == '__main__':
     app.run(debug=True)
