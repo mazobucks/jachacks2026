@@ -168,7 +168,8 @@ def convert_mock_data_to_objects(mock_goals):
 @login_required
 def home():
     goals= get_goals_for_user(current_user.user_id)
-    return render_template("home.html", goals=goals, now=datetime.now())
+    userInfo= getUser(current_user.user_id)
+    return render_template("home.html", goals=goals, now=datetime.now(), userInfo=userInfo)
 
 @app.route("/login")
 def login_form():
@@ -267,9 +268,6 @@ def leaderboard():
 @app.route("/api/leaderboard", methods=["GET"])
 def get_leaderboard():
     db = get_db()
-    
-    # We join Users and Stats on the user_id
-    # We use SUM(points) and sort descending (DESC)
     query = """
         SELECT 
             Users.name, 
@@ -283,23 +281,22 @@ def get_leaderboard():
     
     try:
         cursor = db.execute(query)
-        # Fetchall returns a list of row objects
         rows = cursor.fetchall()
         
-        # Convert rows into a list of dictionaries for JSON
         leaderboard_data = []
-        for row in rows:
+        for i, row in enumerate(rows):
             leaderboard_data.append({
-                "name": row["name"],
-                "program": row["program"],
-                "total_points": row["total_points"] if row["total_points"] else 0
+                "rank": i + 1,
+                "name": row[0],
+                "program": row[1],
+                "total_points": row[2] if row[2] is not None else 0
             })
             
         return jsonify(leaderboard_data), 200
         
     except Exception as e:
-        print(f"Error fetching leaderboard: {e}")
-        return jsonify({"error": "Could not retrieve leaderboard"}), 500   
+        print(f"Leaderboard Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/goals')
 @login_required
@@ -576,6 +573,17 @@ def generate_quests(goal_id, exam_name, exam_subject, exam_date, hours_willing, 
         return quests
     except Exception as e:
         return None
+    
+def getUser(id):
+    record = get_db().execute("SELECT id, name, password, grade, program FROM Users WHERE id = ? LIMIT 1", [id]).fetchone()
+    if not record:
+        return None
+    
+    rows = get_db().execute(""" SELECT title, points FROM Stats WHERE user_id = ? """, [id]).fetchall()
+
+    stats = [{"title": row[0], "points": row[1]} for row in rows]
+    
+    return { "name":record[1], "grade":record[3], "program":record[4], "stats":stats }
 
 if __name__ == '__main__':
     app.run(debug=True)
