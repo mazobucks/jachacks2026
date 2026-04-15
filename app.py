@@ -15,7 +15,7 @@ from QuestGenerator import QuestGenerator
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "HELLO-ashvdasuvd"
+app.secret_key = os.getenv("SECRET_KEY")
 
 #TESTING AREA
 quest = Quest(
@@ -42,7 +42,8 @@ login_manager.init_app(app)
 def hash_password(name, password):
     return werkzeug.security.generate_password_hash(name + password)
 
-path = "study.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(BASE_DIR, "study.db")
 database_exists = os.path.isfile(path)
 db = sqlite3.connect(path)
 if not database_exists:
@@ -587,4 +588,4 @@ def getUser(id):
     return { "name":record[1], "grade":record[3], "program":record[4], "stats":stats }
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
